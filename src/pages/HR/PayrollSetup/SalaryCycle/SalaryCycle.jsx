@@ -1,51 +1,57 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { FaUniversity, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { FaCalendarAlt, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { getSalaryCycles } from "../../../../apis/employeesapi/SalaryCycleApis";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddBankDrawer from "./AddBankDrawer";
-import EditBankDrawer from "./EditBankDrawer";
+// import AddSalaryCycleDrawer from "./AddSalaryCycleDrawer";
+// import EditSalaryCycleDrawer from "./EditSalaryCycleDrawer";
 
-export default function Banks() {
-  const [banks, setBanks] = useState([]);
+export default function SalaryCycle() {
+  const [cycles, setCycles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedCycle, setSelectedCycle] = useState(null);
 
   // Filters
   const [search, setSearch] = useState("");
-  const [postalFilter, setPostalFilter] = useState("all");
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  // Fetch banks
-  const fetchBanks = () => {
-    setLoading(true);
-    fetch("https://b6d41abe4044.ngrok-free.app/api/employee-banks", {
-      headers: { "ngrok-skip-browser-warning": "true" },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setBanks(data.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  // Fetch salary cycles
+  const fetchCycles = async () => {
+    try {
+      setLoading(true);
+      const res = await getSalaryCycles();
+      // res.data → { success, message, data: [] }
+      setCycles(res.data?.data || []);
+    } catch (err) {
+      console.error("Error fetching salary cycles:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchBanks();
+    fetchCycles();
   }, []);
 
-  // Delete Handler
-  const handleDelete = async (code) => {
+  // Delete handler
+  const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently remove the bank entry.",
+      text: "This will permanently remove the salary cycle.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
@@ -55,67 +61,55 @@ export default function Banks() {
       if (result.isConfirmed) {
         try {
           const res = await fetch(
-            `https://eccb56b72a60.ngrok-free.app/api/employee-banks/${code}`,
+            `https://your-ngrok-url/api/salary-cycles/${id}`,
             {
               method: "DELETE",
               headers: { "ngrok-skip-browser-warning": "true" },
             }
           );
-          if (!res.ok) throw new Error("Failed to delete bank");
-          Swal.fire("Deleted!", "Bank has been deleted.", "success");
-          fetchBanks();
+          if (!res.ok) throw new Error("Failed to delete salary cycle");
+          Swal.fire("Deleted!", "Salary cycle has been deleted.", "success");
+          fetchCycles();
         } catch (err) {
-          Swal.fire("Error!", "Failed to delete bank.", "error");
+          Swal.fire("Error!", "Failed to delete salary cycle.", "error");
         }
       }
     });
   };
 
-  // Unique postal addresses for filter dropdown
-  const postalAddresses = useMemo(() => {
-    const setVals = new Set(banks.map((b) => b.PostalAddress).filter(Boolean));
-    return Array.from(setVals);
-  }, [banks]);
-
-  // Filtered and paginated banks
-  const filteredBanks = useMemo(() => {
-    return banks.filter((bank) => {
-      const matchSearch =
-        bank.Name.toLowerCase().includes(search.toLowerCase()) ||
-        bank.BankCode.toLowerCase().includes(search.toLowerCase());
-      const matchPostal =
-        postalFilter === "all" || bank.PostalAddress === postalFilter;
-      return matchSearch && matchPostal;
+  // Filtered and paginated cycles
+  const filteredCycles = useMemo(() => {
+    return cycles.filter((cycle) => {
+      return cycle.Name.toLowerCase().includes(search.toLowerCase());
     });
-  }, [banks, search, postalFilter]);
+  }, [cycles, search]);
 
-  const paginatedBanks = useMemo(() => {
+  const paginatedCycles = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredBanks.slice(start, start + pageSize);
-  }, [filteredBanks, page, pageSize]);
+    return filteredCycles.slice(start, start + pageSize);
+  }, [filteredCycles, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredBanks.length / pageSize);
+  const totalPages = Math.ceil(filteredCycles.length / pageSize);
 
   return (
     <div className="bg-white px-4 py-4 rounded-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <FaUniversity className="text-white" /> Banks
+          <FaCalendarAlt className="text-white" /> Salary Cycles
         </h2>
         <Button
           onClick={() => setOpenAdd(true)}
           className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
         >
-          <FaPlus /> Add Bank
+          <FaPlus /> Add Salary Cycle
         </Button>
       </div>
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
-        {/* Search */}
         <Input
-          placeholder="Search by name or code..."
+          placeholder="Search by cycle name..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -123,7 +117,6 @@ export default function Banks() {
           }}
           className="w-1/3"
         />
-
 
         {/* Page size */}
         <Select
@@ -148,9 +141,10 @@ export default function Banks() {
       <div className="bg-gray-200 p-4 rounded-sm">
         <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>Name</span>
-          <span>Bank Code</span>
-          <span>Postal Address</span>
-          <span className="col-span-2 text-right">Actions</span>
+          <span>Start Date</span>
+          <span>End Date</span>
+          <span>Status</span>
+          <span className="text-right">Actions</span>
         </div>
 
         {loading ? (
@@ -164,27 +158,38 @@ export default function Banks() {
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded text-right"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
               </div>
             ))}
           </div>
-        ) : paginatedBanks.length > 0 ? (
+        ) : paginatedCycles.length > 0 ? (
           <div className="space-y-2">
-            {paginatedBanks.map((bank) => (
+            {paginatedCycles.map((cycle) => (
               <div
-                key={bank.Code}
+                key={cycle.Id}
                 className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
-                <span className="font-medium text-indigo-700">{bank.Name}</span>
-                <span className="text-sm">{bank.BankCode}</span>
-                <span className="text-sm">{bank.PostalAddress}</span>
+                <span className="font-medium text-indigo-700">{cycle.Name}</span>
+                <span className="text-sm">
+                  {new Date(cycle.StartDate).toLocaleDateString()}
+                </span>
+                <span className="text-sm">
+                  {new Date(cycle.EndDate).toLocaleDateString()}
+                </span>
+                <span
+                  className={`text-sm font-semibold ${
+                    cycle.IsProcessed ? "text-green-600" : "text-yellow-600"
+                  }`}
+                >
+                  {cycle.IsProcessed ? "Processed" : "Pending"}
+                </span>
 
-                <div className="col-span-2 flex justify-end gap-2">
+                <div className="flex justify-end gap-2">
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
-                      setSelectedBank(bank);
+                      setSelectedCycle(cycle);
                       setOpenEdit(true);
                     }}
                   >
@@ -194,7 +199,7 @@ export default function Banks() {
                     size="sm"
                     variant="destructive"
                     className="text-white"
-                    onClick={() => handleDelete(bank.Code)}
+                    onClick={() => handleDelete(cycle.Id)}
                   >
                     <FaTrash /> Delete
                   </Button>
@@ -209,7 +214,7 @@ export default function Banks() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">No banks found.</p>
+            <p className="font-medium text-gray-400">No salary cycles found.</p>
           </div>
         )}
       </div>
@@ -238,17 +243,17 @@ export default function Banks() {
       )}
 
       {/* Drawers */}
-      <AddBankDrawer
+      {/* <AddSalaryCycleDrawer
         open={openAdd}
         onClose={() => setOpenAdd(false)}
-        onSuccess={fetchBanks}
+        onSuccess={fetchCycles}
       />
-      <EditBankDrawer
+      <EditSalaryCycleDrawer
         open={openEdit}
         onClose={() => setOpenEdit(false)}
-        onSuccess={fetchBanks}
-        bank={selectedBank}
-      />
+        onSuccess={fetchCycles}
+        cycle={selectedCycle}
+      /> */}
     </div>
   );
 }

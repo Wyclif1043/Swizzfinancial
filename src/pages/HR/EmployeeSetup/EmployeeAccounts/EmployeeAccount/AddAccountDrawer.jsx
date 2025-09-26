@@ -3,13 +3,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { createAccount } from "../../../../../apis/employeesapi/EmployeeAccountingAPI'S";
 import Swal from "sweetalert2";
 
-export default function AddBankDrawer({ open, onClose, onSuccess }) {
+export default function AddAccountDrawer({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     Name: "",
-    BankCode: "",
-    PostalAddress: "",
+    LinkedGLAccount: "",
+    TaxableEarnings: false,
+    AllowableDeductions: false,
   });
   const [loading, setLoading] = useState(false);
 
@@ -18,29 +21,24 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await fetch(
-        "https://eccb56b72a60.ngrok-free.app/api/employee-banks",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const res = await createAccount(formData);
+      if (res.status !== 201 && res.status !== 200)
+        throw new Error("Failed to add Account");
 
-      if (!res.ok) throw new Error("Failed to add bank");
+      Swal.fire("Success", "Account added successfully!", "success");
 
-      Swal.fire("Success", "Bank added successfully!", "success");
-
-      setFormData({ Name: "", BankCode: "", PostalAddress: "" });
+      setFormData({
+        Name: "",
+        LinkedGLAccount: "",
+        TaxableEarnings: false,
+        AllowableDeductions: false,
+      });
 
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
       console.error(err);
-      Swal.fire("Error", "Failed to add bank.", "error");
+      Swal.fire("Error", "Failed to add Account.", "error");
     } finally {
       setLoading(false);
     }
@@ -65,7 +63,7 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <div className="p-4 flex justify-between items-center bg-indigo-600 rounded-2xl m-2">
-              <h2 className="font-bold text-lg text-white">Add Bank</h2>
+              <h2 className="font-bold text-lg text-white">Add Account</h2>
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
@@ -74,9 +72,9 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Name</Label>
+                  <Label>Account Name</Label>
                   <Input
-                    placeholder="Enter bank name"
+                    placeholder="Enter Account Name"
                     value={formData.Name}
                     onChange={(e) =>
                       setFormData({ ...formData, Name: e.target.value })
@@ -85,25 +83,36 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
                   />
                 </div>
                 <div>
-                  <Label>Bank Code</Label>
+                  <Label>Linked GL Account</Label>
                   <Input
-                    placeholder="Enter bank code"
-                    value={formData.BankCode}
+                    placeholder="Enter Linked GL Account"
+                    value={formData.LinkedGLAccount}
                     onChange={(e) =>
-                      setFormData({ ...formData, BankCode: e.target.value })
+                      setFormData({
+                        ...formData,
+                        LinkedGLAccount: e.target.value,
+                      })
                     }
                     required
                   />
                 </div>
-                <div>
-                  <Label>Postal Address</Label>
-                  <Input
-                    placeholder="Enter postal address"
-                    value={formData.PostalAddress}
-                    onChange={(e) =>
-                      setFormData({ ...formData, PostalAddress: e.target.value })
+                <div className="flex py-3 items-center space-x-2">
+                  <Label>Taxable Earnings</Label>
+                  <Checkbox
+                    checked={formData.TaxableEarnings}
+                    className="ml-8 "
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, TaxableEarnings: checked })
                     }
-                    required
+                  />
+                </div>
+                <div className="flex pb-3 items-center space-x-2">
+                  <Label>Allowable Deductions</Label>
+                  <Checkbox
+                    checked={formData.AllowableDeductions}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, AllowableDeductions: checked })
+                    }
                   />
                 </div>
                 <Button
@@ -111,7 +120,7 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
                   disabled={loading}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
                 >
-                  {loading ? "Saving..." : "Save Bank"}
+                  {loading ? "Saving..." : "Save Account"}
                 </Button>
               </form>
             </div>

@@ -7,10 +7,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MdPayments } from "react-icons/md";
+import { getBankCodes } from "../../../apis/employeesapi/GetBankCode";
+import { getBranches } from "../../../apis/employeesapi/GetBranches";
 
 import Banks from "./Banks/Banks";
 import Branches from "./Branches/Branches";
 import InsuranceCompanies from "./Insurances/InsuranceCompanies";
+import { getEmployeeInsurance } from "../../../apis/employeesapi/GetEmployeeInsuarance";
+import { getSalaryCycles } from "../../../apis/employeesapi/SalaryCycleApis";
+import SalaryCycle from "./SalaryCycle/SalaryCycle";
+
 
 export default function PayrollSetup() {
   const [selectedUser, setSelectedUser] = useState(null);
@@ -25,26 +31,23 @@ export default function PayrollSetup() {
   useEffect(() => {
     const fetchTotals = async () => {
       try {
-        const [banksRes, branchesRes, insuranceRes] = await Promise.all([
-          fetch("https://b6d41abe4044.ngrok-free.app/api/employee-banks", {
-            headers: { "ngrok-skip-browser-warning": "true" },
-          }),
-          fetch("https://b6d41abe4044.ngrok-free.app/api/employee-branches", {
-            headers: { "ngrok-skip-browser-warning": "true" },
-          }),
-          fetch("https://b6d41abe4044.ngrok-free.app/api/employee-insurance-companies", {
-            headers: { "ngrok-skip-browser-warning": "true" },
-          }),
+        const [banksRes, branchesRes, insuranceRes, salaryCyclesRes] = await Promise.all([
+          getBankCodes(),
+          getBranches(),
+          getEmployeeInsurance(),
+          getSalaryCycles(),
         ]);
 
-        const banksData = await banksRes.json();
-        const branchesData = await branchesRes.json();
-        const insuranceData = await insuranceRes.json();
+        const banksData = await banksRes.data;
+        const branchesData = await branchesRes.data;
+        const insuranceData = await insuranceRes.data;
+        const salaryCyclesData = await salaryCyclesRes.data;
 
         setTotals({
-          banks: banksData?.data?.length || 0,
-          branches: branchesData?.data?.length || 0,
-          insurance: insuranceData?.data?.length || 0,
+          banks: banksData?.length || 0,
+          branches: branchesData?.length || 0,
+          insurance: insuranceData?.length || 0,
+          salaryCycles: salaryCyclesData?.length || 0,
         });
       } catch (error) {
         console.error("Error fetching totals:", error);
@@ -60,6 +63,7 @@ export default function PayrollSetup() {
     { id: 1, name: "Banks", total: totals.banks, subtitle: "Financial Institution Bank" },
     { id: 2, name: "Branches", total: totals.branches, subtitle: "Financial Institution Branches" },
     { id: 3, name: "Insurance", total: totals.insurance, subtitle: "Insurance Companies" },
+    { id: 4, name: "Salary Cycle", total: totals.salaryCycles, subtitle: "Manage payroll items" },
   ];
 
   const user = selectedUser || users[0];
@@ -72,6 +76,8 @@ export default function PayrollSetup() {
         return <Branches />;
       case "Insurance":
         return <InsuranceCompanies />;
+      case "Salary Cycle":
+        return <SalaryCycle />;
       default:
         return <p>Select an option from the sidebar</p>;
     }

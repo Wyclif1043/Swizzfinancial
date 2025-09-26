@@ -30,6 +30,10 @@ const mockWorkspaces = [
         name: "Statutory Setup",
         sublinks: [],
       },
+      { id: "HR/Employees",
+        name: "Employees Setup",
+        sublinks: [],
+      },
     ],
   },
   {

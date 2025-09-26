@@ -1,51 +1,60 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { FaUniversity, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { FaUsers, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddBankDrawer from "./AddBankDrawer";
-import EditBankDrawer from "./EditBankDrawer";
+import getEmployees from "../../../../apis/employeesapi/GetEmployees";
+import OnboardEmployeeModal from "./OnboardEmployeeModal";
+// import AddEmployeeDrawer from "./AddEmployeeDrawer";
+// import EditEmployeeDrawer from "./EditEmployeeDrawer";
 
-export default function Banks() {
-  const [banks, setBanks] = useState([]);
+export default function Employees() {
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // Filters
   const [search, setSearch] = useState("");
-  const [postalFilter, setPostalFilter] = useState("all");
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  // Fetch banks
-  const fetchBanks = () => {
+  // Fetch employees
+  const fetchEmployees = async () => {
     setLoading(true);
-    fetch("https://b6d41abe4044.ngrok-free.app/api/employee-banks", {
-      headers: { "ngrok-skip-browser-warning": "true" },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setBanks(data.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    try {
+      const data = await getEmployees();
+      setEmployees(data || []);
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchBanks();
+    console.log("Fetching employees...");
+    fetchEmployees();
   }, []);
 
   // Delete Handler
-  const handleDelete = async (code) => {
+  const handleDelete = async (empNo) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently remove the bank entry.",
+      text: "This will permanently remove the employee profile.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
@@ -54,68 +63,52 @@ export default function Banks() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await fetch(
-            `https://eccb56b72a60.ngrok-free.app/api/employee-banks/${code}`,
-            {
-              method: "DELETE",
-              headers: { "ngrok-skip-browser-warning": "true" },
-            }
-          );
-          if (!res.ok) throw new Error("Failed to delete bank");
-          Swal.fire("Deleted!", "Bank has been deleted.", "success");
-          fetchBanks();
+          // 🔽 replace with actual API call
+          console.log("Delete employee:", empNo);
+          Swal.fire("Deleted!", "Employee has been removed.", "success");
+          fetchEmployees();
         } catch (err) {
-          Swal.fire("Error!", "Failed to delete bank.", "error");
+          Swal.fire("Error!", "Failed to delete employee.", "error");
         }
       }
     });
   };
 
-  // Unique postal addresses for filter dropdown
-  const postalAddresses = useMemo(() => {
-    const setVals = new Set(banks.map((b) => b.PostalAddress).filter(Boolean));
-    return Array.from(setVals);
-  }, [banks]);
+  // Filtered + Paginated employees
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(
+      (emp) =>
+        emp.Name.toLowerCase().includes(search.toLowerCase()) ||
+        String(emp.EmployeeNumber).includes(search)
+    );
+  }, [employees, search]);
 
-  // Filtered and paginated banks
-  const filteredBanks = useMemo(() => {
-    return banks.filter((bank) => {
-      const matchSearch =
-        bank.Name.toLowerCase().includes(search.toLowerCase()) ||
-        bank.BankCode.toLowerCase().includes(search.toLowerCase());
-      const matchPostal =
-        postalFilter === "all" || bank.PostalAddress === postalFilter;
-      return matchSearch && matchPostal;
-    });
-  }, [banks, search, postalFilter]);
-
-  const paginatedBanks = useMemo(() => {
+  const paginatedEmployees = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredBanks.slice(start, start + pageSize);
-  }, [filteredBanks, page, pageSize]);
+    return filteredEmployees.slice(start, start + pageSize);
+  }, [filteredEmployees, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredBanks.length / pageSize);
+  const totalPages = Math.ceil(filteredEmployees.length / pageSize);
 
   return (
     <div className="bg-white px-4 py-4 rounded-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <FaUniversity className="text-white" /> Banks
+          <FaUsers className="text-white" /> Employees
         </h2>
         <Button
-          onClick={() => setOpenAdd(true)}
+          onClick={() => setIsModalOpen(true)}
           className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
         >
-          <FaPlus /> Add Bank
+          <FaPlus /> Onboard New Employee
         </Button>
       </div>
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
-        {/* Search */}
         <Input
-          placeholder="Search by name or code..."
+          placeholder="Search by name or employee number..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -124,8 +117,6 @@ export default function Banks() {
           className="w-1/3"
         />
 
-
-        {/* Page size */}
         <Select
           value={String(pageSize)}
           onValueChange={(val) => {
@@ -146,11 +137,13 @@ export default function Banks() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+          <span>Emp No.</span>
           <span>Name</span>
-          <span>Bank Code</span>
-          <span>Postal Address</span>
-          <span className="col-span-2 text-right">Actions</span>
+          <span>Branch</span>
+          <span>Designation</span>
+          <span>Job Group</span>
+          <span className="text-right">Actions</span>
         </div>
 
         {loading ? (
@@ -158,33 +151,37 @@ export default function Banks() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-5 gap-4 bg-gray-50 p-6 rounded"
+                className="grid grid-cols-6 gap-4 bg-gray-50 p-6 rounded"
               >
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded text-right"></div>
+                {Array.from({ length: 6 }).map((_, j) => (
+                  <div key={j} className="h-4 bg-gray-200 rounded"></div>
+                ))}
               </div>
             ))}
           </div>
-        ) : paginatedBanks.length > 0 ? (
+        ) : paginatedEmployees.length > 0 ? (
           <div className="space-y-2">
-            {paginatedBanks.map((bank) => (
+            {paginatedEmployees.map((emp) => (
               <div
-                key={bank.Code}
-                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                key={emp.EmployeeNumber}
+                className={`grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border ${
+                  emp.Disabled ? "opacity-50" : ""
+                }`}
               >
-                <span className="font-medium text-indigo-700">{bank.Name}</span>
-                <span className="text-sm">{bank.BankCode}</span>
-                <span className="text-sm">{bank.PostalAddress}</span>
+                <span className="font-medium text-indigo-700">
+                  {emp.EmployeeNumber}
+                </span>
+                <span>{emp.Name}</span>
+                <span>{emp.Branch}</span>
+                <span>{emp.Designation}</span>
+                <span>{emp.JobGroup}</span>
 
-                <div className="col-span-2 flex justify-end gap-2">
+                <div className="flex justify-end gap-2">
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
-                      setSelectedBank(bank);
+                      setSelectedEmployee(emp);
                       setOpenEdit(true);
                     }}
                   >
@@ -194,7 +191,7 @@ export default function Banks() {
                     size="sm"
                     variant="destructive"
                     className="text-white"
-                    onClick={() => handleDelete(bank.Code)}
+                    onClick={() => handleDelete(emp.EmployeeNumber)}
                   >
                     <FaTrash /> Delete
                   </Button>
@@ -209,7 +206,7 @@ export default function Banks() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">No banks found.</p>
+            <p className="font-medium text-gray-400">No employees found.</p>
           </div>
         )}
       </div>
@@ -237,18 +234,18 @@ export default function Banks() {
         </div>
       )}
 
-      {/* Drawers */}
-      <AddBankDrawer
-        open={openAdd}
-        onClose={() => setOpenAdd(false)}
-        onSuccess={fetchBanks}
+      <OnboardEmployeeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onEmployeeCreated={() => {
+          setIsModalOpen(false);
+          fetchEmployees();
+        }}
       />
-      <EditBankDrawer
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        onSuccess={fetchBanks}
-        bank={selectedBank}
-      />
+
+      {/* Drawers (if you have them) */}
+      {/* <AddEmployeeDrawer open={openAdd} onClose={() => setOpenAdd(false)} onSuccess={fetchEmployees} /> */}
+      {/* <EditEmployeeDrawer open={openEdit} onClose={() => setOpenEdit(false)} onSuccess={fetchEmployees} employee={selectedEmployee} /> */}
     </div>
   );
 }

@@ -1,51 +1,60 @@
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { FaUniversity, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { FaDollarSign, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  getEarnings,
+  deleteEarning,
+} from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddBankDrawer from "./AddBankDrawer";
-import EditBankDrawer from "./EditBankDrawer";
+import AddEmployeeEarnings from "./AddEmployeeEarnings";
+import EditEmployeeEarnings from "./EditEmployeeEarnings";
 
-export default function Banks() {
-  const [banks, setBanks] = useState([]);
+export default function EmployeeEarnings() {
+  const [earnings, setEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedEarning, setSelectedEarning] = useState(null);
 
   // Filters
   const [search, setSearch] = useState("");
-  const [postalFilter, setPostalFilter] = useState("all");
+  const [employeeFilter, setEmployeeFilter] = useState("all");
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  // Fetch banks
-  const fetchBanks = () => {
+  // Fetch earnings
+  const fetchEarnings = async () => {
+  try {
     setLoading(true);
-    fetch("https://b6d41abe4044.ngrok-free.app/api/employee-banks", {
-      headers: { "ngrok-skip-browser-warning": "true" },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setBanks(data.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  };
+    const res = await getEarnings();
+    setEarnings(res.data?.data || []); 
+  } catch (error) {
+    console.error("Error fetching earnings:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
-    fetchBanks();
+    fetchEarnings();
   }, []);
 
   // Delete Handler
-  const handleDelete = async (code) => {
+  const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently remove the bank entry.",
+      text: "This will permanently remove the earning entry.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
@@ -54,60 +63,55 @@ export default function Banks() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await fetch(
-            `https://eccb56b72a60.ngrok-free.app/api/employee-banks/${code}`,
-            {
-              method: "DELETE",
-              headers: { "ngrok-skip-browser-warning": "true" },
-            }
-          );
-          if (!res.ok) throw new Error("Failed to delete bank");
-          Swal.fire("Deleted!", "Bank has been deleted.", "success");
-          fetchBanks();
+          const res = await deleteEarning(id);
+          if (res.status !== 200) throw new Error("Failed to delete earning");
+          Swal.fire("Deleted!", "Earning has been deleted.", "success");
+          fetchEarnings();
         } catch (err) {
-          Swal.fire("Error!", "Failed to delete bank.", "error");
+          Swal.fire("Error!", "Failed to delete earning.", "error");
         }
       }
     });
   };
 
-  // Unique postal addresses for filter dropdown
-  const postalAddresses = useMemo(() => {
-    const setVals = new Set(banks.map((b) => b.PostalAddress).filter(Boolean));
+  // Unique employee numbers for filter dropdown
+  const employeeNumbers = useMemo(() => {
+    const setVals = new Set(earnings.map((e) => e.EmployeeNumber).filter(Boolean));
     return Array.from(setVals);
-  }, [banks]);
+  }, [earnings]);
 
-  // Filtered and paginated banks
-  const filteredBanks = useMemo(() => {
-    return banks.filter((bank) => {
+  // Filtered and paginated earnings
+  const filteredEarnings = useMemo(() => {
+    return earnings.filter((earning) => {
       const matchSearch =
-        bank.Name.toLowerCase().includes(search.toLowerCase()) ||
-        bank.BankCode.toLowerCase().includes(search.toLowerCase());
-      const matchPostal =
-        postalFilter === "all" || bank.PostalAddress === postalFilter;
-      return matchSearch && matchPostal;
+        earning.EarningCode.toString().includes(search) ||
+        earning.Amount.toString().includes(search);
+      const matchEmployee =
+        employeeFilter === "all" ||
+        earning.EmployeeNumber === Number(employeeFilter);
+      return matchSearch && matchEmployee;
     });
-  }, [banks, search, postalFilter]);
+  }, [earnings, search, employeeFilter]);
 
-  const paginatedBanks = useMemo(() => {
+  const paginatedEarnings = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredBanks.slice(start, start + pageSize);
-  }, [filteredBanks, page, pageSize]);
+    return filteredEarnings.slice(start, start + pageSize);
+  }, [filteredEarnings, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredBanks.length / pageSize);
+  const totalPages = Math.ceil(filteredEarnings.length / pageSize);
 
   return (
     <div className="bg-white px-4 py-4 rounded-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <FaUniversity className="text-white" /> Banks
+          <FaDollarSign className="text-white" /> Employee Earnings
         </h2>
         <Button
           onClick={() => setOpenAdd(true)}
           className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
         >
-          <FaPlus /> Add Bank
+          <FaPlus /> Add Earning
         </Button>
       </div>
 
@@ -115,7 +119,7 @@ export default function Banks() {
       <div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
         {/* Search */}
         <Input
-          placeholder="Search by name or code..."
+          placeholder="Search by earning code or amount..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -124,6 +128,26 @@ export default function Banks() {
           className="w-1/3"
         />
 
+        {/* Employee filter */}
+        <Select
+          value={employeeFilter}
+          onValueChange={(val) => {
+            setEmployeeFilter(val);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by Employee" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Employees</SelectItem>
+            {employeeNumbers.map((num) => (
+              <SelectItem key={num} value={String(num)}>
+                Employee #{num}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Page size */}
         <Select
@@ -146,11 +170,13 @@ export default function Banks() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
-          <span>Name</span>
-          <span>Bank Code</span>
-          <span>Postal Address</span>
-          <span className="col-span-2 text-right">Actions</span>
+        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+          <span>Employee No</span>
+          <span>Earning Code</span>
+          <span>Amount</span>
+          <span>Start Date</span>
+          <span>End Date</span>
+          <span className="text-right">Actions</span>
         </div>
 
         {loading ? (
@@ -158,8 +184,9 @@ export default function Banks() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-5 gap-4 bg-gray-50 p-6 rounded"
+                className="grid grid-cols-6 gap-4 bg-gray-50 p-6 rounded"
               >
+                <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
@@ -168,23 +195,33 @@ export default function Banks() {
               </div>
             ))}
           </div>
-        ) : paginatedBanks.length > 0 ? (
+        ) : paginatedEarnings.length > 0 ? (
           <div className="space-y-2">
-            {paginatedBanks.map((bank) => (
+            {paginatedEarnings.map((earning) => (
               <div
-                key={bank.Code}
-                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                key={earning.Id}
+                className="grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
-                <span className="font-medium text-indigo-700">{bank.Name}</span>
-                <span className="text-sm">{bank.BankCode}</span>
-                <span className="text-sm">{bank.PostalAddress}</span>
+                <span className="font-medium text-indigo-700">
+                  {earning.EmployeeNumber}
+                </span>
+                <span className="text-sm">{earning.EarningCode}</span>
+                <span className="text-sm">{earning.Amount}</span>
+                <span className="text-sm">
+                  {new Date(earning.StartDate).toLocaleDateString()}
+                </span>
+                <span className="text-sm">
+                  {earning.EndDate
+                    ? new Date(earning.EndDate).toLocaleDateString()
+                    : "Ongoing"}
+                </span>
 
-                <div className="col-span-2 flex justify-end gap-2">
+                <div className="flex justify-end gap-2">
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
-                      setSelectedBank(bank);
+                      setSelectedEarning(earning);
                       setOpenEdit(true);
                     }}
                   >
@@ -194,7 +231,7 @@ export default function Banks() {
                     size="sm"
                     variant="destructive"
                     className="text-white"
-                    onClick={() => handleDelete(bank.Code)}
+                    onClick={() => handleDelete(earning.Id)}
                   >
                     <FaTrash /> Delete
                   </Button>
@@ -209,7 +246,7 @@ export default function Banks() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">No banks found.</p>
+            <p className="font-medium text-gray-400">No earnings found.</p>
           </div>
         )}
       </div>
@@ -237,17 +274,17 @@ export default function Banks() {
         </div>
       )}
 
-      {/* Drawers */}
-      <AddBankDrawer
+      {/* Modals/Drawers */}
+      <AddEmployeeEarnings
         open={openAdd}
         onClose={() => setOpenAdd(false)}
-        onSuccess={fetchBanks}
+        onSuccess={fetchEarnings}
       />
-      <EditBankDrawer
+      <EditEmployeeEarnings
         open={openEdit}
         onClose={() => setOpenEdit(false)}
-        onSuccess={fetchBanks}
-        bank={selectedBank}
+        onSuccess={fetchEarnings}
+        earning={selectedEarning}
       />
     </div>
   );

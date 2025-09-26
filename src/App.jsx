@@ -39,6 +39,7 @@ import PurchaseCreditMemo from "./pages/Finance/PurchaseCreditMemo/PurchaseCredi
 import PayrollSetup from "./pages/HR/PayrollSetup/PayrollSetup.jsx";
 import StatutorySetup from "./pages/HR/Statutory setup/StatutorySetup.jsx";
 import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
+import EmployeeSetup from "./pages/HR/EmployeeSetup/EmployeeSetup.jsx";
 
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="Human Resource" element={<HR />} />
           <Route path="HR/payrollsetup" element={<PayrollSetup/>} />
           <Route path="HR/statutorysetup" element={<StatutorySetup/>} />
+          <Route path="HR/Employees" element={<EmployeeSetup/>} />
           <Route path="department" element={<Departments/>} />
           <Route path="leave" element={<Leaves />} />
 
