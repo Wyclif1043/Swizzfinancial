@@ -67,7 +67,6 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
         serialNo: "",
         assetName: "",
         responsibleEmployee: "",
-        faClassId: "",
         faSubClassId: "",
         locationId: "",
         bookValue: "",
@@ -172,26 +171,6 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
                     }
                   />
                 </div>
-
-                <div>
-                  <Label>FA Class</Label>
-                  <select
-                    className="border w-full p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={formData.faClassId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, faClassId: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">Select Class</option>
-                    {faClasses.map((c) => (
-                      <option key={c.Id} value={c.Id}>
-                        {c.description}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
                 <div>
                   <Label>FA SubClass</Label>
                   <select
@@ -204,8 +183,8 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
                   >
                     <option value="">Select SubClass</option>
                     {faSubClasses.map((sc) => (
-                      <option key={sc.id} value={sc.id}>
-                        {sc.description}
+                      <option key={sc.Id} value={sc.Id}>
+                        {sc.Description}
                       </option>
                     ))}
                   </select>
@@ -223,8 +202,8 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
                   >
                     <option value="">Select Location</option>
                     {locations.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.description}
+                      <option key={l.Id} value={l.Id}>
+                        {l.Description}
                       </option>
                     ))}
                   </select>

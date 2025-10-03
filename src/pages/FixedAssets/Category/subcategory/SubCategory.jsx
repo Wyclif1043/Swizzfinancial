@@ -111,8 +111,7 @@ export default function SubCategoryDrawer({ category, open, onClose }) {
           showConfirmButton: false,
         });
 
-        await refreshList();
-        setSubCategories(filteredSubCategories);
+        setSubCategories((prev) => [...prev, res.data.data]);
 
         resetForm();
       }
@@ -121,7 +120,7 @@ export default function SubCategoryDrawer({ category, open, onClose }) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: err.response?.data?.message || "Failed to create SubClass",
+        text: err.response?.data?.message || "Failed to create SubClass" || err.message,
       });
     }
   };

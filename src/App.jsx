@@ -70,7 +70,7 @@ export default function App() {
           <Route path="/FixedAssets" element={<FixedAssetsSetup />} />
           <Route path="/FixedAssets/Category" element={<FixCategory/>} />
           <Route path="/FixedAssets/Location" element={<Location/>} />
-          <Route path="/FixedAssets/UnitOfMeasure" element={<FixUnitOfMeasure/>} />
+          <Route path="FixedAssets/FixedAssetCard" element={<FixedAssetsSetup/>} />
 
           {/* Procurement */}
           <Route path="/Procurement" element={<Procument/>} />

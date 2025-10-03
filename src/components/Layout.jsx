@@ -137,7 +137,7 @@ const mockWorkspaces = [
     dms: [
       { id: "FixedAssets/Category", name: "Fixed Asset Class", sublinks: [] },
       { id: "FixedAssets/Location", name: "Location", sublinks: [] },
-      { id: "FixedAssets/UnitOfMeasure", name: "Unit Of Measure", sublinks: [] },
+      { id: "FixedAssets/FixedAssetCard", name: "Fixed Asset Card", sublinks: [] },
     ],
   },
 ];
