@@ -8,6 +8,7 @@ import { GrResources } from "react-icons/gr";
 import { SiFsecure } from "react-icons/si";
 import { RiBankFill } from "react-icons/ri";
 import { MdInventory2 } from "react-icons/md";
+import { MdBusinessCenter } from "react-icons/md";
 import bgcircle from "../assets/circle.jpg";
 import { Outlet } from "react-router-dom";
 
@@ -126,6 +127,17 @@ const mockWorkspaces = [
       { id: "Inventory/InvItems", name: "Items", sublinks: [] },
       { id: "Inventory/InvJournals", name: "Journals", sublinks: [] },
       { id: "Inventory/InvTransactions", name: "Transactions", sublinks: [] },
+    ],
+  },
+  {
+    id: "ws5",
+    name: "FixedAssets",
+    title: "Fixed Assets",
+    icon: <MdBusinessCenter className="text-2xl" />,
+    dms: [
+      { id: "FixedAssets/Category", name: "Fixed Asset Class", sublinks: [] },
+      { id: "FixedAssets/Location", name: "Location", sublinks: [] },
+      { id: "FixedAssets/UnitOfMeasure", name: "Unit Of Measure", sublinks: [] },
     ],
   },
 ];

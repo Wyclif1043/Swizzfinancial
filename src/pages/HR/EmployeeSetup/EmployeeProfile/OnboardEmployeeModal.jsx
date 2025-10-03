@@ -4,10 +4,12 @@ import { FaUser } from "react-icons/fa";
 import { getBankCodes } from "../../../../apis/employeesapi/GetBankCode";
 import { getBranches } from "../../../../apis/employeesapi/GetBranches";
 import { getBankBranches } from "../../../../apis/employeesapi/GetBankBranches";
+import Swal from "sweetalert2";
 
 const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
   const [formData, setFormData] = useState({
     name: "",
+    employeenumber: "",
     branch: "",
     designation: "",
     startDate: "",
@@ -33,40 +35,45 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    // If bank changes, reset branch selection
+    const numericFields = ["employeenumber", "bankCode", "branchCode"];
+
+    let newValue = type === "checkbox" ? checked : value;
+
+    if (numericFields.includes(name)) {
+      newValue = value ? Number(value) : "";
+    }
+
     if (name === "bankCode") {
       setFormData({
         ...formData,
-        [name]: type === "checkbox" ? checked : value,
-        branchCode: "", // Reset branch when bank changes
+        [name]: newValue,
+        branchCode: "",
       });
     } else {
       setFormData({
         ...formData,
-        [name]: type === "checkbox" ? checked : value,
+        [name]: newValue,
       });
     }
   };
 
-  // Fetch branches and banks on modal open
   useEffect(() => {
     if (!isOpen) return;
 
     const fetchInitialData = async () => {
       setLoading({ ...loading, branches: true, banks: true });
-      
+
       try {
         const [branchesData, banksData] = await Promise.all([
           getBranches(),
-          getBankCodes()
+          getBankCodes(),
         ]);
-        
+
         console.log("Branches data:", branchesData);
         console.log("Banks data:", banksData);
-        
-        setBranches(Array.isArray(branchesData) ? branchesData : []);
-        setBanks(Array.isArray(banksData) ? banksData : []);
+
+        setBranches(Array.isArray(branchesData?.data) ? branchesData.data : []);
+        setBanks(Array.isArray(banksData?.data) ? banksData.data : []);
       } catch (error) {
         console.error("Error fetching initial data:", error);
         setBranches([]);
@@ -79,7 +86,6 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
     fetchInitialData();
   }, [isOpen]);
 
-  // Fetch bank branches when bank is selected
   useEffect(() => {
     if (!formData.bankCode) {
       setBankBranches([]);
@@ -87,25 +93,22 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
     }
 
     const fetchBankBranches = async () => {
-      setLoading({ ...loading, bankBranches: true });
-      
+      setLoading((prev) => ({ ...prev, bankBranches: true }));
       try {
-        const data = await getBankBranches(formData.bankCode);
-        console.log("Bank branches data:", data);
-        
-        // Ensure we always have an array
-        if (Array.isArray(data)) {
-          setBankBranches(data);
-        } else if (data && typeof data === 'object') {
-          setBankBranches([data]);
-        } else {
-          setBankBranches([]);
-        }
+        const response = await getBankBranches(); // fetch ALL branches
+        const allBranches = response || []; // ensure fallback to []
+
+        // ✅ Filter by selected bankCode
+        const filtered = allBranches.filter(
+          (branch) => Number(branch.BankCode) === Number(formData.bankCode)
+        );
+
+        setBankBranches(filtered);
       } catch (error) {
-        console.error("Error fetching bank branches:", error);
+        console.error("Error filtering bank branches:", error);
         setBankBranches([]);
       } finally {
-        setLoading({ ...loading, bankBranches: false });
+        setLoading((prev) => ({ ...prev, bankBranches: false }));
       }
     };
 
@@ -114,18 +117,55 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    if (!formData.branch) {
+      Swal.fire("Validation Error", "Please select a branch", "error");
+      return;
+    }
+
     try {
-      console.log("Submitting form data:", formData);
-      await createEmployee(formData);
-      
+      const selectedBranch = branches.find(
+        (b) => (b.Code || b.id) === formData.branch
+      );
+
+      const branchName = selectedBranch
+        ? selectedBranch.Name ||
+          selectedBranch.name ||
+          selectedBranch.BranchName
+        : formData.branch;
+
+      const payload = {
+        EmployeeNumber: Number(formData.employeenumber),
+        Name: formData.name,
+        Branch: "",
+        Designation: formData.designation,
+        StartDate: formData.startDate,
+        EndDate: formData.endDate || null,
+        JobGroup: formData.jobGroup,
+        Disabled: formData.disabled,
+        NSSFNumber: formData.nssfNumber,
+        SHANumber: formData.shaNumber,
+        KRAPIN: formData.krapin,
+        AccountNumber: formData.accountNumber,
+        BankCode: formData.bankCode ? Number(formData.bankCode) : null,
+        BranchCode: formData.branchCode ? Number(formData.branchCode) : null,
+      };
+
+      console.log("Submitting payload:", payload);
+      console.log("Selected branch object:", selectedBranch);
+
+      await createEmployee(payload);
+
+      Swal.fire("Success", "Employee created successfully!", "success");
+
       if (onEmployeeCreated) {
         onEmployeeCreated(formData);
       }
-      
+
       // Reset form
       setFormData({
         name: "",
+        employeenumber: "",
         branch: "",
         designation: "",
         startDate: "",
@@ -139,11 +179,13 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
         bankCode: "",
         branchCode: "",
       });
-      
+
       onClose();
     } catch (error) {
       console.error("Error creating employee:", error);
-      alert(`Failed to create employee: ${error.message || "Unknown error"}`);
+      const errorMessage =
+        error.response?.data?.message || error.message || "Unknown error";
+      Swal.fire("Error", `Failed to create employee: ${errorMessage}`, "error");
     }
   };
 
@@ -194,7 +236,22 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
 
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">
-                  Branch
+                  Employee Number *
+                </label>
+                <input
+                  type="text"
+                  name="employeenumber"
+                  value={formData.employeenumber}
+                  onChange={handleChange}
+                  className="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                  placeholder="Enter employee number"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Branch *
                 </label>
                 <select
                   name="branch"
@@ -202,18 +259,24 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
                   onChange={handleChange}
                   className="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   disabled={loading.branches}
+                  required
                 >
                   <option value="">
-                    {loading.branches ? "Loading branches..." : "-- Select Branch --"}
+                    {loading.branches
+                      ? "Loading branches..."
+                      : "-- Select Branch --"}
                   </option>
                   {branches.map((branch) => (
-                    <option key={branch.Code || branch.id} value={branch.Code || branch.id}>
-                      {branch.Name || branch.name || branch.BranchName}
+                    <option key={branch.BranchName} value={branch.BranchName}>
+                      {branch.Name || branch.BranchName}
                     </option>
                   ))}
                 </select>
+
                 {branches.length === 0 && !loading.branches && (
-                  <p className="text-xs text-red-500 mt-1">No branches available</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    No branches available
+                  </p>
                 )}
               </div>
 
@@ -366,13 +429,18 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
                     {loading.banks ? "Loading banks..." : "-- Select Bank --"}
                   </option>
                   {banks.map((bank) => (
-                    <option key={bank.Code || bank.id} value={bank.Code || bank.id}>
+                    <option
+                      key={bank.Code || bank.id}
+                      value={bank.Code || bank.id}
+                    >
                       {bank.Name || bank.name || bank.BankName}
                     </option>
                   ))}
                 </select>
                 {banks.length === 0 && !loading.banks && (
-                  <p className="text-xs text-red-500 mt-1">No banks available</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    No banks available
+                  </p>
                 )}
               </div>
 
@@ -386,40 +454,30 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
                   onChange={handleChange}
                   className="border border-gray-300 rounded-md p-2 w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   disabled={loading.bankBranches || !formData.bankCode}
+                  required
                 >
                   <option value="">
-                    {loading.bankBranches 
-                      ? "Loading branches..." 
-                      : !formData.bankCode 
-                        ? "Select bank first"
-                        : "-- Select Branch --"
-                    }
+                    {loading.bankBranches
+                      ? "Loading branches..."
+                      : !formData.bankCode
+                      ? "Select bank first"
+                      : "-- Select Branch --"}
                   </option>
                   {bankBranches.map((branch) => (
-                    <option key={branch.Code || branch.id} value={branch.Code || branch.id}>
-                      {branch.BranchName || `${branch.Name} - ${branch.PostalAddress}` || branch.name}
+                    <option key={branch.Code} value={branch.Code}>
+                      {branch.BranchName}
                     </option>
                   ))}
                 </select>
-                {formData.bankCode && bankBranches.length === 0 && !loading.bankBranches && (
-                  <p className="text-xs text-red-500 mt-1">No branches found for this bank</p>
-                )}
+                {formData.bankCode &&
+                  bankBranches.length === 0 &&
+                  !loading.bankBranches && (
+                    <p className="text-xs text-red-500 mt-1">
+                      No branches found for this bank
+                    </p>
+                  )}
               </div>
             </div>
-          </div>
-
-          {/* Disabled Checkbox */}
-          <div className="col-span-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                name="disabled"
-                checked={formData.disabled}
-                onChange={handleChange}
-                className="rounded focus:ring-2 focus:ring-indigo-500"
-              />
-              Employee Disabled
-            </label>
           </div>
 
           {/* Employee Status Section */}
@@ -453,12 +511,13 @@ const OnboardEmployeeModal = ({ isOpen, onClose, onEmployeeCreated }) => {
             <button
               type="submit"
               className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
-              disabled={loading.branches || loading.banks || loading.bankBranches}
-            >
-              {loading.branches || loading.banks || loading.bankBranches 
-                ? "Loading..." 
-                : "Create Employee"
+              disabled={
+                loading.branches || loading.banks || loading.bankBranches
               }
+            >
+              {loading.branches || loading.banks || loading.bankBranches
+                ? "Loading..."
+                : "Create Employee"}
             </button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -8,23 +8,23 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { FaCreditCard, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaBuilding, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import {
+  getEmployeeInsuranceCompanies,
+  deleteEmployeeInsuranceCompanyApi,
+  updateEmployeeInsuranceCompanyApi,
+} from "../../../../apis/employeesapi/EmployeesInsuarance";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddAccountDrawer from "./EmployeeAccount/AddAccountDrawer";
-import EditAccountDrawer from "./EmployeeAccount/EditAccountDrawer";
-import { deleteAccount } from "../../../../apis/employeesapi/EmployeeAccountingAPI'S";
-import { getAccounts } from "../../../../apis/employeesapi/EmployeeAccountingAPI'S";
-import AddSalaryCycle from "./EmployeeSalaryCycle/AddSalaryCycle";
+import AddInsuranceCompany from "./AddInsuaranceCompany";
+import EditInsuranceCompany from "./EditInsuaranceCompany";
 
-export default function EmployeeAccountSetup() {
-  const [accounts, setAccounts] = useState([]);
+export default function InsuranceCompanies() {
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // For modals/drawers
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -33,28 +33,34 @@ export default function EmployeeAccountSetup() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-  // Fetch accounts
-  const fetchAccounts = async () => {
-    setLoading(true);
+  // Fetch Insurance Companies
+  const fetchCompanies = async () => {
     try {
-      const data = await getAccounts();
-      setAccounts(data || []);
-    } catch (err) {
-      console.error("Error fetching accounts:", err);
+      setLoading(true);
+      const res = await getEmployeeInsuranceCompanies();
+      console.log("Fetched Insurance Companies:", res.data);
+      const normalized = (res.data || []).map((c) => ({
+        id: c.Code,
+        name: c.Name,
+        address: c.Address,
+      }));
+      setCompanies(normalized);
+    } catch (error) {
+      console.error("Error fetching insurance companies:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAccounts();
+    fetchCompanies();
   }, []);
 
   // Delete Handler
-  const handleDelete = async (accountId) => {
+  const handleDelete = async (id) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently remove the employee account.",
+      text: "This will permanently remove the Insurance Company.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
@@ -63,51 +69,51 @@ export default function EmployeeAccountSetup() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteAccount(accountId);
-          Swal.fire("Deleted!", "Account has been removed.", "success");
-          fetchAccounts();
+          const res = await deleteEmployeeInsuranceCompanyApi(id);
+          if (res.status !== 200)
+            throw new Error("Failed to delete insurance company");
+          Swal.fire("Deleted!", "Insurance company has been deleted.", "success");
+          fetchCompanies();
         } catch (err) {
-          Swal.fire("Error!", "Failed to delete account.", "error");
+          Swal.fire("Error!", "Failed to delete insurance company.", "error");
         }
       }
     });
   };
 
-  // Filtered + Paginated accounts
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter(
-      (acc) =>
-        acc.Name?.toLowerCase().includes(search.toLowerCase()) ||
-        String(acc.Code || acc.id).includes(search)
+  // Filtered and paginated insurance companies
+  const filteredCompanies = useMemo(() => {
+    return companies.filter((c) =>
+      c.name?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [accounts, search]);
+  }, [companies, search]);
 
-  const paginatedAccounts = useMemo(() => {
+  const paginatedCompanies = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredAccounts.slice(start, start + pageSize);
-  }, [filteredAccounts, page, pageSize]);
+    return filteredCompanies.slice(start, start + pageSize);
+  }, [filteredCompanies, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredAccounts.length / pageSize);
+  const totalPages = Math.ceil(filteredCompanies.length / pageSize);
 
   return (
     <div className="bg-white px-4 py-4 rounded-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <FaCreditCard className="text-white" /> Employee Accounts
+          <FaBuilding className="text-white" /> Insurance Companies
         </h2>
         <Button
           onClick={() => setOpenAdd(true)}
           className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
         >
-          <FaPlus /> Add New Account
+          <FaPlus /> Create Insurance Company
         </Button>
       </div>
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
         <Input
-          placeholder="Search by account name or code..."
+          placeholder="Search by name..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -116,6 +122,7 @@ export default function EmployeeAccountSetup() {
           className="w-1/3"
         />
 
+        {/* Page size */}
         <Select
           value={String(pageSize)}
           onValueChange={(val) => {
@@ -136,13 +143,10 @@ export default function EmployeeAccountSetup() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
-          <span>Code</span>
+        <div className="grid grid-cols-4 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>Name</span>
-          <span>Linked G/L Account</span>
-          <span>Taxable Earnings</span>
-          <span>Allowable Deductions</span>
-          <span className="text-right">Actions</span>
+          <span>Address</span>
+          <span className="text-center col-span-2">Actions</span>
         </div>
 
         {loading ? (
@@ -150,34 +154,31 @@ export default function EmployeeAccountSetup() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-6 gap-4 bg-gray-50 p-6 rounded"
+                className="grid grid-cols-4 gap-4 bg-gray-50 p-6 rounded"
               >
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <div key={j} className="h-4 bg-gray-200 rounded"></div>
-                ))}
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded col-span-2"></div>
               </div>
             ))}
           </div>
-        ) : paginatedAccounts.length > 0 ? (
+        ) : paginatedCompanies.length > 0 ? (
           <div className="space-y-2">
-            {paginatedAccounts.map((acc) => (
+            {paginatedCompanies.map((company) => (
               <div
-                key={acc.id || acc.Code}
-                className="grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                key={company.id}
+                className="grid grid-cols-4 gap-4 items-center py-4 px-6 rounded-lg shadow-lg border transition-all bg-white hover:shadow-xl"
               >
-                <span className="font-medium text-indigo-700">
-                  {acc.Code || acc.id}
-                </span>
-                <span>{acc.Name}</span>
-                <span>{acc.LinkedGLAccount}</span>
-                <span>{acc.TaxableEarnings ? "Yes" : "No"}</span>
-                <span>{acc.AllowableDeductions ? "Yes" : "No"}</span>
-                <div className="flex justify-end gap-2">
+                <span className="font-medium text-indigo-700">{company.name}</span>
+                <span className="text-sm">{company.address}</span>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-10">
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
-                      setSelectedAccount(acc);
+                      setSelectedCompany(company);
                       setOpenEdit(true);
                     }}
                   >
@@ -187,7 +188,7 @@ export default function EmployeeAccountSetup() {
                     size="sm"
                     variant="destructive"
                     className="text-white"
-                    onClick={() => handleDelete(acc.id || acc.Code)}
+                    onClick={() => handleDelete(company.id)}
                   >
                     <FaTrash /> Delete
                   </Button>
@@ -202,7 +203,7 @@ export default function EmployeeAccountSetup() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">No accounts found.</p>
+            <p className="font-medium text-gray-400">No insurance companies found.</p>
           </div>
         )}
       </div>
@@ -230,9 +231,19 @@ export default function EmployeeAccountSetup() {
         </div>
       )}
 
-      {/* Optional Add/Edit drawers or modals */}
-      <AddAccountDrawer open={openAdd} onClose={() => setOpenAdd(false)} onSuccess={fetchAccounts}/>
-      <EditAccountDrawer open={openEdit} onClose={() => setOpenEdit(false)} onSuccess={fetchAccounts} account={selectedAccount} />
+      {/* Modals */}
+      <AddInsuranceCompany
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        onSuccess={fetchCompanies}
+      />
+
+      <EditInsuranceCompany
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        onSuccess={fetchCompanies}
+        company={selectedCompany}
+      />
     </div>
   );
 }

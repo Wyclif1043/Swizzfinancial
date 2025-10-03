@@ -27,6 +27,12 @@ import Procument from "./pages/Procurement/Procument";
 import Finance from "./pages/Finance/Finance";
 import GeneralLedger from "./pages/Finance/GeneralLedger";
 
+
+import FixedAssetsSetup from "./pages/FixedAssets/FixedAssetsSetup.jsx";
+import FixCategory from "./pages/FixedAssets/Category/fixCategory.jsx";
+import Location from "./pages/FixedAssets/Location/Location.jsx";
+import FixUnitOfMeasure from "./pages/FixedAssets/UnitOfMeasure/fixUnitOfMeasure.jsx";
+
 import InvLocation from "./pages/Inventory/locations/InvLocation";
 import InventoryDashboard from "./pages/Inventory/InventoryDashboard.jsx";
 import ProVendors from "./pages/Procurement/Vendors/ProVendors.jsx";
@@ -51,6 +57,7 @@ export default function App() {
 
         {/* All other routes WITH Layout */}
         <Route path="/" element={<Layout />}>
+
           {/* HR */}
           <Route path="Human Resource" element={<HR />} />
           <Route path="HR/payrollsetup" element={<PayrollSetup/>} />
@@ -58,6 +65,12 @@ export default function App() {
           <Route path="HR/Employees" element={<EmployeeSetup/>} />
           <Route path="department" element={<Departments/>} />
           <Route path="leave" element={<Leaves />} />
+
+          {/* FixedAssets */}
+          <Route path="/FixedAssets" element={<FixedAssetsSetup />} />
+          <Route path="/FixedAssets/Category" element={<FixCategory/>} />
+          <Route path="/FixedAssets/Location" element={<Location/>} />
+          <Route path="/FixedAssets/UnitOfMeasure" element={<FixUnitOfMeasure/>} />
 
           {/* Procurement */}
           <Route path="/Procurement" element={<Procument/>} />

@@ -1,30 +1,49 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { MdPerson, MdExpandMore, MdExpandLess } from "react-icons/md";
-import { FaUser, FaBuilding, FaUsers, FaCreditCard, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
+import {
+  MdPerson,
+  MdExpandMore,
+  MdExpandLess,
+} from "react-icons/md";
+import {
+  FaUser,
+  FaMoneyCheck,
+  FaBuilding,
+  FaUsers,
+  FaCreditCard,
+  FaMoneyBillWave,
+  FaChartLine,
+} from "react-icons/fa";
+
 import Employees from "./EmployeeProfile/Employees";
 import EmployeeEarnings from "./EmployeeAccounts/EmployeeEarnings/EmployeeEarnings";
 import EmployeeAccountSetup from "./EmployeeAccounts/EmployeeAccountSetup";
 import EmployeeDeductions from "./EmployeeAccounts/EmployeeDeductions/EmployeeDeductions";
+import SalaryCycle from "./EmployeeAccounts/EmployeeSalaryCycle/SalaryCycle";
+import InsuranceCompanies from "./EmployeeInsuarance/EmployeeInsuaranceSetup";
+import Payslip from "./Reports&Payrol/Payslip";
+import AnnualTaxReport from "./Reports&Payrol/TaxReport";
 
-const Branches = () => <div>Branches setup here</div>;
-const InsuranceCompanies = () => <div>Insurance setup here</div>;
-
-// Account subcomponents
-const PayrollSetup = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Payroll Setup</h2><p>Configure payroll settings and calculations here.</p></div>;
-const Earnings = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Benefits Management</h2><p>Manage employee benefits and deductions here.</p></div>;
-const SalaryStructure = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Salary Structure</h2><p>Define salary grades and structures here.</p></div>;
-const PayrollReports = () => <div className="p-6"><h2 className="text-2xl font-bold mb-4">Payroll Reports</h2><p>View and generate payroll reports here.</p></div>;
+// Dummy subcomponents
+const PayrollSetup = () => (
+  <div className="p-6">
+    <h2 className="text-2xl font-bold mb-4">Payroll Setup</h2>
+    <p>Configure payroll settings and calculations here.</p>
+  </div>
+);
+const PayrollReports = () => (
+  <div className="p-6">
+    <h2 className="text-2xl font-bold mb-4">Payroll Reports</h2>
+    <p>View and generate payroll reports here.</p>
+  </div>
+);
 
 function EmployeeSetup() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedSublink, setSelectedSublink] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-  const [expandedAccounts, setExpandedAccounts] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({});
 
   const users = [
     {
@@ -59,6 +78,12 @@ function EmployeeSetup() {
           icon: FaChartLine,
         },
         {
+          id: 25,
+          name: "Salary Cycle",
+          subtitle: "Manage Salary Cycles",
+          icon: FaMoneyCheck,
+        },
+        {
           id: 24,
           name: "Payroll Reports",
           subtitle: "View payroll reports",
@@ -72,31 +97,49 @@ function EmployeeSetup() {
       subtitle: "Insurance Companies",
       icon: FaMoneyBillWave,
     },
+    {
+      id: 4,
+      name: "Payslip and Reports",
+      subtitle: "Employee Payslips and Reports",
+      icon: FaChartLine,
+      hasSublinks: true,
+      sublinks: [
+        {
+          id: 31,
+          name: "Payslip",
+          subtitle: "Get Employee Payslips",
+          icon: FaMoneyBillWave,
+        },
+        {
+          id: 32,
+          name: "Tax Reports",
+          subtitle: "Get employee's Tax Reports",
+          icon: FaChartLine,
+        },
+      ],
+    },
   ];
 
   const user = selectedUser || users[0];
 
   const handleMainItemClick = (u) => {
     if (u.hasSublinks) {
-      // If clicking on Accounts, toggle expansion
-      if (u.id === 2) {
-        setExpandedAccounts(!expandedAccounts);
-        // If not already selected, select it
-        if (selectedUser?.id !== u.id) {
-          setSelectedUser(u);
-          setSelectedSublink(null);
-        }
+      setExpandedMenus((prev) => ({
+        ...prev,
+        [u.id]: !prev[u.id],
+      }));
+      if (selectedUser?.id !== u.id) {
+        setSelectedUser(u);
+        setSelectedSublink(null);
       }
     } else {
       setSelectedUser(u);
       setSelectedSublink(null);
-      setExpandedAccounts(false);
     }
   };
 
-  const handleSubLinkClick = (sublink) => {
+  const handleSubLinkClick = (sublink, parentUser) => {
     setSelectedSublink(sublink);
-    const parentUser = users.find(u => u.id === 2);
     setSelectedUser(parentUser);
   };
 
@@ -109,14 +152,19 @@ function EmployeeSetup() {
           return <EmployeeEarnings />;
         case "Employees Deductions":
           return <EmployeeDeductions />;
+        case "Salary Cycle":
+          return <SalaryCycle />;
         case "Payroll Reports":
           return <PayrollReports />;
+        case "Payslip":
+          return <Payslip />;
+        case "Tax Reports":
+          return <AnnualTaxReport />;
         default:
           return <EmployeeAccountSetup />;
       }
     }
 
-    // Otherwise render main content
     switch (user.name) {
       case "Employees":
         return <Employees />;
@@ -185,7 +233,7 @@ function EmployeeSetup() {
                         >
                           {u.sublinks?.length || 0}
                         </Badge>
-                        {expandedAccounts && u.id === 2 ? (
+                        {expandedMenus[u.id] ? (
                           <MdExpandLess
                             className={`text-lg ${
                               user.id === u.id && !selectedSublink
@@ -208,12 +256,12 @@ function EmployeeSetup() {
                 </Card>
 
                 {/* Sublinks */}
-                {u.hasSublinks && expandedAccounts && u.id === 2 && (
+                {u.hasSublinks && expandedMenus[u.id] && (
                   <div className="ml-4 mt-2 space-y-1">
                     {u.sublinks.map((sublink) => (
                       <Card
                         key={sublink.id}
-                        onClick={() => handleSubLinkClick(sublink)}
+                        onClick={() => handleSubLinkClick(sublink, u)}
                         className={`p-2 cursor-pointer transition-all duration-200 border-l-4 ${
                           selectedSublink?.id === sublink.id
                             ? "bg-indigo-100 border-l-indigo-500 shadow-sm"
@@ -261,9 +309,7 @@ function EmployeeSetup() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 overflow-y-auto bg-white">
-        <div className="h-full">
-          {renderContent()}
-        </div>
+        <div className="h-full">{renderContent()}</div>
       </main>
     </div>
   );
