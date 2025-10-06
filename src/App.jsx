@@ -16,17 +16,19 @@ import PostingJournal from "./pages/Finance/POST/postingJournal";
 
 
 import Settings from "./pages/Settings";
-import Leaves from "./pages/HR/Leave";
+import Leaves from "./pages/Payroll/Leave";
 import Login from "./pages/Auth/Login";
 import Procureone from "./pages/Procurement/procureone";
 import Procuretwo from "./pages/Procurement/procuretwo";
-import HR from "./pages/HR/HR";
-import Employees from "./pages/HR/Employees";
-import Departments from "./pages/HR/Departments";
+import Payroll from "./pages/Payroll/Payroll.jsx";
+import Employees from "./pages/Payroll/Employees";
+import Departments from "./pages/Payroll/Departments";
 import Procument from "./pages/Procurement/Procument";
 import Finance from "./pages/Finance/Finance";
 import GeneralLedger from "./pages/Finance/GeneralLedger";
 
+// Account setup page
+import AccountsSetup from "./pages/Payroll/Accounts/AccountsSetup.jsx";
 
 import FixedAssetsSetup from "./pages/FixedAssets/FixedAssetsSetup.jsx";
 import FixCategory from "./pages/FixedAssets/Category/fixCategory.jsx";
@@ -42,10 +44,10 @@ import BankLinkages from "./pages/Finance/Setup/Bank/BankLinkages.jsx";
 import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/AccountConfiguration.jsx";
 import PurchaseInvoices from "./pages/Finance/PurchaseInvoice/PurchaseInvoices.jsx";
 import PurchaseCreditMemo from "./pages/Finance/PurchaseCreditMemo/PurchaseCreditMemo.jsx";
-import PayrollSetup from "./pages/HR/PayrollSetup/PayrollSetup.jsx";
-import StatutorySetup from "./pages/HR/Statutory setup/StatutorySetup.jsx";
+import PayrollSetup from "./pages/Payroll/PayrollSetup/PayrollSetup.jsx";
+import StatutorySetup from "./pages/Payroll/Statutory setup/StatutorySetup.jsx";
 import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
-import EmployeeSetup from "./pages/HR/EmployeeSetup/EmployeeSetup.jsx";
+import EmployeeSetup from "./pages/Payroll/EmployeeSetup/EmployeeSetup.jsx";
 
 
 export default function App() {
@@ -58,11 +60,11 @@ export default function App() {
         {/* All other routes WITH Layout */}
         <Route path="/" element={<Layout />}>
 
-          {/* HR */}
-          <Route path="Human Resource" element={<HR />} />
-          <Route path="HR/payrollsetup" element={<PayrollSetup/>} />
-          <Route path="HR/statutorysetup" element={<StatutorySetup/>} />
-          <Route path="HR/Employees" element={<EmployeeSetup/>} />
+          {/* Payroll */}
+          <Route path="Payroll" element={<Payroll />} />
+          <Route path="Payroll/payrollsetup" element={<PayrollSetup/>} />
+          <Route path="Payroll/statutorysetup" element={<StatutorySetup/>} />
+          <Route path="Payroll/Employees" element={<EmployeeSetup/>} />
           <Route path="department" element={<Departments/>} />
           <Route path="leave" element={<Leaves />} />
 
@@ -93,11 +95,15 @@ export default function App() {
 
           <Route path="AccountsPayable" element={<h1>Accounts Payable</h1>} />
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
+
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />
           <Route path="AccountsReceivable" element={<h1>Accounts Receivable</h1>} />
           <Route path="BudgetingForecasting" element={<h1>Budgeting & Forecasting</h1>} />
           <Route path="BankReconciliation" element={<h1>Bank Reconciliation</h1>} />
           <Route path="FinancialReporting" element={<h1>Financial Reporting</h1>} />
+
+          {/* Payroll Account Setup */}
+          <Route path="/Payroll/Accounts" element={<AccountsSetup/>}/>
 
           {/* Inventory */}
           <Route path="Inventory" element={<h1>Inventory</h1>} />

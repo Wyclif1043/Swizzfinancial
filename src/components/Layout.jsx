@@ -17,21 +17,26 @@ import { Outlet } from "react-router-dom";
 const mockWorkspaces = [
   {
     id: "ws1",
-    name: "Human Resource",
-    title: "HR",
+    name: "Payroll",
+    title: "Payroll",
     icon: <GrResources className="text-2xl" />,
-    dms: [
+    dms: [ 
       {
-        id: "HR/payrollsetup",
+        id: "Payroll/payrollsetup",
         name: "Payroll Setup",
         sublinks: [],
       },
       {
-        id: "HR/statutorysetup",
+        id: "Payroll/statutorysetup",
         name: "Statutory Setup",
         sublinks: [],
       },
-      { id: "HR/Employees",
+      {
+        id: "Payroll/Accounts",
+        name: "Accounts",
+        sublinks:[],
+      },
+      { id: "Payroll/Employees",
         name: "Employees Setup",
         sublinks: [],
       },

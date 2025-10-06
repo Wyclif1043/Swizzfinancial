@@ -111,8 +111,7 @@ export default function SubCategoryDrawer({ category, open, onClose }) {
           showConfirmButton: false,
         });
 
-        setSubCategories((prev) => [...prev, res.data.data]);
-
+        await refreshList();
         resetForm();
       }
     } catch (err) {
@@ -186,7 +185,6 @@ export default function SubCategoryDrawer({ category, open, onClose }) {
 
         // Refresh list
         await refreshList();
-        setSubCategories(filteredSubCategories);
 
         resetForm();
       }
@@ -226,7 +224,6 @@ export default function SubCategoryDrawer({ category, open, onClose }) {
           });
 
           await refreshList();
-          setSubCategories(filteredSubCategories);
         }
       } catch (err) {
         console.error("Delete error:", err);
