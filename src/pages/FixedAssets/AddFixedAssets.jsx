@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Swal from "sweetalert2";
 import fixedassetsApi from "../../apis/fixedAssets/fixedassetsConfig";
+import getemployeesapi from "../../apis/fixedAssets/getEmployee";
 
 export default function AddFixedAssets({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -30,19 +31,22 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
   const [faClasses, setFaClasses] = useState([]);
   const [faSubClasses, setFaSubClasses] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
-        const [cls, subCls, locs] = await Promise.all([
+        const [cls, subCls, locs, emp] = await Promise.all([
           fixedassetsApi.get("/faclass"),
           fixedassetsApi.get("/fasubclass"),
           fixedassetsApi.get("/falocation"),
+          getemployeesapi.get("/requisitions/employees"),
         ]);
         setFaClasses(cls.data.data || []);
         setFaSubClasses(subCls.data.data || []);
         setLocations(locs.data.data || []);
+        setEmployees(emp.data || []);
       } catch (err) {
         console.error("Error fetching dropdowns:", err);
         Swal.fire("Error", "Failed to load dropdown options.", "error");
@@ -160,8 +164,8 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
 
                 <div>
                   <Label>Responsible Employee</Label>
-                  <Input
-                    placeholder="Mike Nduthi"
+                  <select
+                    className="border w-full p-2 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     value={formData.responsibleEmployee}
                     onChange={(e) =>
                       setFormData({
@@ -169,8 +173,16 @@ export default function AddFixedAssets({ open, onClose, onSuccess }) {
                         responsibleEmployee: e.target.value,
                       })
                     }
-                  />
+                  >
+                    <option value="">Select Employee</option>
+                    {employees.map((emp) => (
+                      <option key={emp.Id} value={emp.Customer.FullName}>
+                        {emp.Customer.FullName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
                   <Label>FA SubClass</Label>
                   <select
