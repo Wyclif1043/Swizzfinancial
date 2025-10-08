@@ -32,7 +32,7 @@ export default function EditContributionDrawer({ open, onClose, onSuccess, contr
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/sha-contributions/${formData.Id}`,formData);
+      const res = await Base_Url.put(`/sha-rates/update/${formData.Id}`,formData);
       if (res.status !== 200) throw new Error("Failed to update contribution");
 
       Swal.fire("Success", "Contribution updated successfully!", "success");

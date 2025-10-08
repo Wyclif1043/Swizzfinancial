@@ -8,8 +8,10 @@ import Base_Url from "../../../../apis/BaseApi";
 
 export default function AddContributionDrawer({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    ContributionRate: "2.75",
-    Contributionamount: "",
+    rate: "",
+    effectiveFrom: "",
+    effectiveTo:"",
+    createdBy:"AdminUser"
   });
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +23,8 @@ export default function AddContributionDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/sha-contributions",formData);
+      const res = await Base_Url.post("/sha-rates/create",formData);
+      console.log("Response: ",res)
       if (res.status !== 200) throw new Error("Failed to add contribution");
 
       Swal.fire("Success", "Contribution added successfully!", "success");
@@ -70,23 +73,33 @@ export default function AddContributionDrawer({ open, onClose, onSuccess }) {
                     type="number"
                     step="0.01"
                     placeholder="Enter rate"
-                    disabled
                     value={formData.ContributionRate}
                     onChange={(e) =>
-                      setFormData({ ...formData, ContributionRate: e.target.value })
+                      setFormData({ ...formData, rate: e.target.value })
                     }
                     required
                   />
                 </div>
                 <div>
-                  <Label>Contribution Amount</Label>
+                  <Label>Effective From</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter amount"
+                    type="Date"
+                    placeholder="Enter Start Date: "
                     value={formData.Contributionamount}
                     onChange={(e) =>
-                      setFormData({ ...formData, Contributionamount: e.target.value })
+                      setFormData({ ...formData, effectiveFrom: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Effective To: </Label>
+                  <Input
+                    type="Date"
+                    placeholder="Enter End Date: "
+                    value={formData.Contributionamount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, effectiveTo: e.target.value })
                     }
                     required
                   />

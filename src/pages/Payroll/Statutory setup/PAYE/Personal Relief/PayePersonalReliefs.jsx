@@ -34,14 +34,15 @@ export default function PayePersonalReliefs() {
   const fetchReliefs = async () => {
     setLoading(true);
     try {
-      const res = await Base_Url.get("/paye-reliefs")
-      if(res.status == 200){
-        setReliefs(res.data?.data || [])
+      const res = await Base_Url.get("/payepersonalrelief/all");
+      if (res.status == 200) {
+        setReliefs(res.data?.data || []);
       }
     } catch (error) {
-      console.error("Error Fetching Paye Personal Reliefs: ",error)
+      console.error("Error Fetching Paye Personal Reliefs: ", error);
+    } finally {
+      setLoading(false);
     }
-    finally{setLoading(false)}
   };
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function PayePersonalReliefs() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await Base_Url.delete(`/paye-reliefs/${id}`);
+          const res = await Base_Url.delete(`/payepersonalrelief/delete/${id}`);
 
           if (res.status !== 200) throw new Error("Failed to delete relief");
           Swal.fire("Deleted!", "Relief has been deleted.", "success");
@@ -75,12 +76,15 @@ export default function PayePersonalReliefs() {
 
   // Filter + paginate
   const filteredReliefs = useMemo(() => {
-    return reliefs.filter(
-      (r) =>
-        r.TaxYear.toString().includes(search) ||
-        r.MonthlyRelief.toString().includes(search) ||
-        r.AnnualRelief.toString().includes(search)
-    );
+    return reliefs.filter((r) => {
+      const idMatch = r.Id?.toString().includes(search);
+      const monthlyMatch = r.MonthlyRelief?.toString().includes(search);
+      const startDateMatch = r.StartDate
+        ? new Date(r.StartDate).getFullYear().toString().includes(search)
+        : false;
+
+      return idMatch || monthlyMatch || startDateMatch;
+    });
   }, [reliefs, search]);
 
   const paginatedReliefs = useMemo(() => {
@@ -139,9 +143,9 @@ export default function PayePersonalReliefs() {
       <div className="bg-gray-200 p-4 rounded-sm">
         <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
-          <span>Tax Year</span>
+          <span>Start Date</span>
+          <span>End Date</span>
           <span>Monthly Relief</span>
-          <span>Annual Relief</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -168,9 +172,13 @@ export default function PayePersonalReliefs() {
                 className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{r.Id}</span>
-                <span>{r.TaxYear}</span>
+                <span>{new Date(r.StartDate).toLocaleDateString()}</span>
+                <span>
+                  {r.EndDate
+                    ? new Date(r.EndDate).toLocaleDateString()
+                    : "Ongoing"}
+                </span>
                 <span>{r.MonthlyRelief}</span>
-                <span>{r.AnnualRelief}</span>
 
                 <div className="flex justify-end gap-2">
                   <Button

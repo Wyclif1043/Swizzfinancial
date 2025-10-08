@@ -3,21 +3,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import Swal from "sweetalert2";
 import Base_Url from "../../../../apis/BaseApi";
 
 export default function AddNssfContributionDrawer({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    EmployeeAmount: "",
-    EmployerAmount: "",
-    Total: "",
+    tier: "Tier I",
+    lowerLimit: "",
+    upperLimit: "",
+    rate: "",
+    effectiveFrom: "",
+    effectiveTo: "",
+    createdBy: "SystemAdmin", // you can pass logged-in user if needed
   });
   const [loading, setLoading] = useState(false);
 
-  // Auto-calc total
-  const calculateTotal = (emp, er) => {
-    const total = (parseFloat(emp) || 0) + (parseFloat(er) || 0);
-    setFormData({ EmployeeAmount: emp, EmployerAmount: er, Total: total.toFixed(2) });
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -25,12 +28,22 @@ export default function AddNssfContributionDrawer({ open, onClose, onSuccess }) 
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/nssf-contributions", formData);
+      const res = await Base_Url.post("/nssfrates/create", formData);
 
-      if (res.status !== 200) throw new Error("Failed to add contribution");
+      if (res.status !== 200 && res.status !== 201) {
+        throw new Error("Failed to add contribution");
+      }
 
       Swal.fire("Success", "NSSF Contribution added!", "success");
-      setFormData({ EmployeeAmount: "", EmployerAmount: "", Total: "" });
+      setFormData({
+        tier: "Tier I",
+        lowerLimit: "",
+        upperLimit: "",
+        rate: "",
+        effectiveFrom: "",
+        effectiveTo: "",
+        createdBy: "SystemAdmin",
+      });
 
       if (onSuccess) onSuccess();
       onClose();
@@ -69,34 +82,80 @@ export default function AddNssfContributionDrawer({ open, onClose, onSuccess }) 
 
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Tier dropdown */}
                 <div>
-                  <Label>Employee Amount</Label>
+                  <Label>Tier</Label>
+                  <Select
+                    value={formData.tier}
+                    onValueChange={(val) => handleChange("tier", val)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tier I">Tier I</SelectItem>
+                      <SelectItem value="Tier II">Tier II</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Lower Limit */}
+                <div>
+                  <Label>Lower Limit</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={formData.EmployeeAmount}
-                    onChange={(e) =>
-                      calculateTotal(e.target.value, formData.EmployerAmount)
-                    }
+                    value={formData.lowerLimit}
+                    onChange={(e) => handleChange("lowerLimit", e.target.value)}
                     required
                   />
                 </div>
+
+                {/* Upper Limit */}
                 <div>
-                  <Label>Employer Amount</Label>
+                  <Label>Upper Limit</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={formData.EmployerAmount}
-                    onChange={(e) =>
-                      calculateTotal(formData.EmployeeAmount, e.target.value)
-                    }
+                    value={formData.upperLimit}
+                    onChange={(e) => handleChange("upperLimit", e.target.value)}
                     required
                   />
                 </div>
+
+                {/* Rate */}
                 <div>
-                  <Label>Total</Label>
-                  <Input value={formData.Total} readOnly />
+                  <Label>Rate (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.rate}
+                    onChange={(e) => handleChange("rate", e.target.value)}
+                    required
+                  />
                 </div>
+
+                {/* Effective From */}
+                <div>
+                  <Label>Effective From</Label>
+                  <Input
+                    type="date"
+                    value={formData.effectiveFrom}
+                    onChange={(e) => handleChange("effectiveFrom", e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Effective To */}
+                <div>
+                  <Label>Effective To (optional)</Label>
+                  <Input
+                    type="date"
+                    value={formData.effectiveTo || ""}
+                    onChange={(e) => handleChange("effectiveTo", e.target.value)}
+                  />
+                </div>
+
                 <Button
                   type="submit"
                   disabled={loading}

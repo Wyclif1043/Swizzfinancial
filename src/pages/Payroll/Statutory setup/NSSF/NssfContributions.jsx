@@ -33,15 +33,14 @@ export default function NssfContributions() {
   const fetchContributions = async () => {
     setLoading(true);
     try {
-      const res = await Base_Url.get("/nssf-contributions")
-      if(res.status == 200){
-        setContributions(res.data?.data)
+      const res = await Base_Url.get("/nssfrates/all");
+      if (res.status == 200) {
+        setContributions(res.data?.data);
       }
     } catch (error) {
-      console.error("Error fetching contributions: ",error)
-    }
-    finally{
-      setLoading(false)
+      console.error("Error fetching contributions: ", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,9 +61,10 @@ export default function NssfContributions() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await Base_Url.delete(`/nssf-contributions/${id}`);
+          const res = await Base_Url.delete(`/nssfrates/delete/${id}`);
 
-          if (res.status !== 200) throw new Error("Failed to delete contribution");
+          if (res.status !== 200)
+            throw new Error("Failed to delete contribution");
           Swal.fire("Deleted!", "Contribution has been deleted.", "success");
           fetchContributions();
         } catch (err) {
@@ -78,9 +78,10 @@ export default function NssfContributions() {
   const filteredContributions = useMemo(() => {
     return contributions.filter(
       (c) =>
-        c.EmployeeAmount.toString().includes(search) ||
-        c.EmployerAmount.toString().includes(search) ||
-        c.Total.toString().includes(search)
+        c.Tier.toLowerCase().includes(search.toLowerCase()) ||
+        c.LowerLimit.toString().includes(search) ||
+        c.UpperLimit.toString().includes(search) ||
+        c.Rate.toString().includes(search)
     );
   }, [contributions, search]);
 
@@ -140,9 +141,9 @@ export default function NssfContributions() {
       <div className="bg-gray-200 p-4 rounded-sm">
         <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
-          <span>Employee Amount</span>
-          <span>Employer Amount</span>
-          <span>Total</span>
+          <span>Tier</span>
+          <span>Limit</span>
+          <span>Rate (%)</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -164,14 +165,11 @@ export default function NssfContributions() {
         ) : paginatedContributions.length > 0 ? (
           <div className="space-y-2">
             {paginatedContributions.map((c) => (
-              <div
-                key={c.Id}
-                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
-              >
+              <div key={c.Id} className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border">
                 <span className="font-medium text-green-700">{c.Id}</span>
-                <span>{c.EmployeeAmount}</span>
-                <span>{c.EmployerAmount}</span>
-                <span className="font-bold">{c.Total}</span>
+                <span>{c.Tier}</span>
+                <span>{c.LowerLimit} - {c.UpperLimit}</span>
+                <span>{c.Rate}%</span>
 
                 <div className="flex justify-end gap-2">
                   <Button
@@ -203,9 +201,7 @@ export default function NssfContributions() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">
-              No contributions found.
-            </p>
+            <p className="font-medium text-gray-400">No contributions found.</p>
           </div>
         )}
       </div>

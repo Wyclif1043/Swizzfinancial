@@ -14,8 +14,10 @@ export default function EditPayeReliefDrawer({
 }) {
   const [formData, setFormData] = useState({
     id: "",
-    taxYear: "",
     monthlyRelief: "",
+    startDate: "",
+    endDate: "",
+    createdBy: "FinanceOfficer", // default value
   });
   const [loading, setLoading] = useState(false);
 
@@ -24,8 +26,10 @@ export default function EditPayeReliefDrawer({
     if (relief) {
       setFormData({
         id: relief.Id,
-        taxYear: relief.TaxYear,
         monthlyRelief: relief.MonthlyRelief,
+        startDate: relief.StartDate ? relief.StartDate.split("T")[0] : "",
+        endDate: relief.EndDate ? relief.EndDate.split("T")[0] : "",
+        createdBy: relief.CreatedBy || "FinanceOfficer",
       });
     }
   }, [relief]);
@@ -39,11 +43,17 @@ export default function EditPayeReliefDrawer({
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/paye-reliefs/${formData.id}`, {
-        id: formData.id,
-        taxYear: Number(formData.taxYear),
-        onthlyRelief: Number(formData.monthlyRelief),
-      });
+      const payload = {
+        monthlyRelief: Number(formData.monthlyRelief),
+        startDate: formData.startDate,
+        endDate: formData.endDate || null,
+        createdBy: formData.createdBy,
+      };
+
+      const res = await Base_Url.put(
+        `/payepersonalrelief/update/${formData.id}`,
+        payload
+      );
 
       if (res.status !== 200)
         throw new Error("Failed to update personal relief");
@@ -93,23 +103,44 @@ export default function EditPayeReliefDrawer({
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Tax Year</Label>
-                  <Input
-                    type="number"
-                    name="taxYear"
-                    value={formData.taxYear}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div>
                   <Label>Monthly Relief</Label>
                   <Input
                     type="number"
                     step="0.01"
                     name="monthlyRelief"
                     value={formData.monthlyRelief}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date (optional)</Label>
+                  <Input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div>
+                  <Label>Created By</Label>
+                  <Input
+                    type="text"
+                    name="createdBy"
+                    value={formData.createdBy}
                     onChange={handleChange}
                     required
                   />

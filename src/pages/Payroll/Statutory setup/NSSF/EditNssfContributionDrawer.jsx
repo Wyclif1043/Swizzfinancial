@@ -3,33 +3,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import Swal from "sweetalert2";
 import Base_Url from "../../../../apis/BaseApi";
 
 export default function EditNssfContributionDrawer({ open, onClose, onSuccess, contribution }) {
   const [formData, setFormData] = useState({
-    Id: "",
-    EmployeeAmount: "",
-    EmployerAmount: "",
-    Total: "",
+    id: "",
+    tier: "Tier I",
+    lowerLimit: "",
+    upperLimit: "",
+    rate: "",
+    effectiveFrom: "",
+    effectiveTo: "",
+    createdBy: "PayrollManager", 
   });
   const [loading, setLoading] = useState(false);
 
-  // Prefill
+  // Prefill from selected contribution
   useEffect(() => {
     if (contribution) {
       setFormData({
-        Id: contribution.Id,
-        EmployeeAmount: contribution.EmployeeAmount,
-        EmployerAmount: contribution.EmployerAmount,
-        Total: contribution.Total,
+        id: contribution.Id,
+        tier: contribution.Tier,
+        lowerLimit: contribution.LowerLimit,
+        upperLimit: contribution.UpperLimit,
+        rate: contribution.Rate,
+        effectiveFrom: contribution.EffectiveFrom?.split("T")[0] || "",
+        effectiveTo: contribution.EffectiveTo ? contribution.EffectiveTo.split("T")[0] : "",
+        createdBy: contribution.CreatedBy || "PayrollManager",
       });
     }
   }, [contribution]);
 
-  const calculateTotal = (emp, er) => {
-    const total = (parseFloat(emp) || 0) + (parseFloat(er) || 0);
-    setFormData((prev) => ({ ...prev, EmployeeAmount: emp, EmployerAmount: er, Total: total.toFixed(2) }));
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +45,15 @@ export default function EditNssfContributionDrawer({ open, onClose, onSuccess, c
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/nssf-contributions/${formData.Id}`,formData);
+      const res = await Base_Url.put(`/nssfrates/update/${formData.id}`, {
+        tier: formData.tier,
+        lowerLimit: parseFloat(formData.lowerLimit),
+        upperLimit: parseFloat(formData.upperLimit),
+        rate: parseFloat(formData.rate),
+        effectiveFrom: formData.effectiveFrom,
+        effectiveTo: formData.effectiveTo || null,
+        createdBy: formData.createdBy,
+      });
 
       if (res.status !== 200) throw new Error("Failed to update contribution");
 
@@ -79,34 +95,80 @@ export default function EditNssfContributionDrawer({ open, onClose, onSuccess, c
 
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Tier dropdown */}
                 <div>
-                  <Label>Employee Amount</Label>
+                  <Label>Tier</Label>
+                  <Select
+                    value={formData.tier}
+                    onValueChange={(val) => handleChange("tier", val)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tier I">Tier I</SelectItem>
+                      <SelectItem value="Tier II">Tier II</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Lower Limit */}
+                <div>
+                  <Label>Lower Limit</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={formData.EmployeeAmount}
-                    onChange={(e) =>
-                      calculateTotal(e.target.value, formData.EmployerAmount)
-                    }
+                    value={formData.lowerLimit}
+                    onChange={(e) => handleChange("lowerLimit", e.target.value)}
                     required
                   />
                 </div>
+
+                {/* Upper Limit */}
                 <div>
-                  <Label>Employer Amount</Label>
+                  <Label>Upper Limit</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={formData.EmployerAmount}
-                    onChange={(e) =>
-                      calculateTotal(formData.EmployeeAmount, e.target.value)
-                    }
+                    value={formData.upperLimit}
+                    onChange={(e) => handleChange("upperLimit", e.target.value)}
                     required
                   />
                 </div>
+
+                {/* Rate */}
                 <div>
-                  <Label>Total</Label>
-                  <Input value={formData.Total} readOnly />
+                  <Label>Rate (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.rate}
+                    onChange={(e) => handleChange("rate", e.target.value)}
+                    required
+                  />
                 </div>
+
+                {/* Effective From */}
+                <div>
+                  <Label>Effective From</Label>
+                  <Input
+                    type="date"
+                    value={formData.effectiveFrom}
+                    onChange={(e) => handleChange("effectiveFrom", e.target.value)}
+                    required
+                  />
+                </div>
+
+                {/* Effective To */}
+                <div>
+                  <Label>Effective To</Label>
+                  <Input
+                    type="date"
+                    value={formData.effectiveTo || ""}
+                    onChange={(e) => handleChange("effectiveTo", e.target.value)}
+                  />
+                </div>
+
                 <Button
                   type="submit"
                   disabled={loading}

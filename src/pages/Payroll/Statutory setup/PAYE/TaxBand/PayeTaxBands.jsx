@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,16 +30,18 @@ export default function PayeTaxBands() {
   const [pageSize, setPageSize] = useState(5);
 
   // Fetch tax bands
-  const fetchTaxBands =async () => {
+  const fetchTaxBands = async () => {
     setLoading(true);
     try {
-      const res = await Base_Url.get("/paye-taxbands")
-      if(res.status == 200){
-        setTaxBands(res.data?.data || [])
+      const res = await Base_Url.get("/payetaxbands/all");
+      if (res.status == 200) {
+        setTaxBands(res.data?.data || []);
       }
     } catch (error) {
-      console.error("Error fetching Tax band: ",error)
-    }finally{setLoading(false)}
+      console.error("Error fetching Tax band: ", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function PayeTaxBands() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await Base_Url.delete(`/paye-taxbands/${id}`);
+          const res = await Base_Url.delete(`/payetaxbands/delete/${id}`);
 
           if (res.status !== 200) throw new Error("Failed to delete tax band");
           Swal.fire("Deleted!", "Tax band has been deleted.", "success");
@@ -77,10 +77,11 @@ export default function PayeTaxBands() {
   const filteredBands = useMemo(() => {
     return taxBands.filter(
       (b) =>
-        b.TaxYear.toString().includes(search) ||
+        (b.StartDate?.split("T")[0] || "").includes(search) ||
+        (b.EndDate ? b.EndDate.split("T")[0] : "").includes(search) ||
         (b.LowerLimit?.toString() || "").includes(search) ||
         (b.UpperLimit?.toString() || "").includes(search) ||
-        b.Rate.toString().includes(search)
+        (b.Rate?.toString() || "").includes(search)
     );
   }, [taxBands, search]);
 
@@ -138,9 +139,8 @@ export default function PayeTaxBands() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
-          <span>Tax Year</span>
           <span>Lower Limit</span>
           <span>Upper Limit</span>
           <span>Rate (%)</span>
@@ -168,10 +168,9 @@ export default function PayeTaxBands() {
             {paginatedBands.map((b) => (
               <div
                 key={b.Id}
-                className="grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{b.Id}</span>
-                <span>{b.TaxYear}</span>
                 <span>{b.LowerLimit}</span>
                 <span>{b.UpperLimit ?? "∞"}</span>
                 <span>{b.Rate}%</span>

@@ -8,8 +8,10 @@ import Base_Url from "../../../../../apis/BaseApi";
 
 export default function AddPayeReliefDrawer({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    taxYear: "",
     monthlyRelief: "",
+    startDate: "",
+    endDate: "",
+    createdBy: "PayrollAdmin",
   });
   const [loading, setLoading] = useState(false);
 
@@ -22,13 +24,24 @@ export default function AddPayeReliefDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/paye-reliefs",{taxYear: Number(formData.taxYear),monthlyRelief: Number(formData.monthlyRelief)});
-      
+      const payload = {
+        monthlyRelief: Number(formData.monthlyRelief),
+        startDate: formData.startDate,
+        endDate: formData.endDate || null,
+        createdBy: formData.createdBy,
+      };
+
+      const res = await Base_Url.post("/payepersonalrelief/create", payload);
 
       if (res.status !== 200) throw new Error("Failed to create personal relief");
 
       Swal.fire("Success!", "Personal relief added successfully.", "success");
-      setFormData({ taxYear: "", monthlyRelief: "" });
+      setFormData({
+        monthlyRelief: "",
+        startDate: "",
+        endDate: "",
+        createdBy: "PayrollAdmin",
+      });
 
       if (onSuccess) onSuccess();
       onClose();
@@ -74,17 +87,6 @@ export default function AddPayeReliefDrawer({ open, onClose, onSuccess }) {
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Tax Year</Label>
-                  <Input
-                    type="number"
-                    name="taxYear"
-                    value={formData.taxYear}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div>
                   <Label>Monthly Relief</Label>
                   <Input
                     type="number"
@@ -93,6 +95,27 @@ export default function AddPayeReliefDrawer({ open, onClose, onSuccess }) {
                     value={formData.monthlyRelief}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+
+                <div>
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date (optional)</Label>
+                  <Input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
                   />
                 </div>
 

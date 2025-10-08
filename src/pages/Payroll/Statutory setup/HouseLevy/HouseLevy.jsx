@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,15 +9,16 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaEdit, FaHome, FaPlus, FaTrash } from "react-icons/fa";
+import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddHouseLevyDrawer from "./AddHouseLevyDrawer"; // <-- import drawer
-import UpdateHouseLevyDrawer from "./UpdateHouseLevyDrawer"; // NEW
+import AddHouseLevyDrawer from "./AddHouseLevyDrawer";
+import UpdateHouseLevyDrawer from "./UpdateHouseLevyDrawer";
 import Base_Url from "../../../../apis/BaseApi";
 
 export default function HousingLevy() {
   const [levies, setLevies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [drawerOpen, setDrawerOpen] = useState(false); // <-- control drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [updateDrawerOpen, setUpdateDrawerOpen] = useState(false);
   const [selectedLevy, setSelectedLevy] = useState(null);
 
@@ -34,12 +29,11 @@ export default function HousingLevy() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
-
-  // Delete contribution
+  // Delete levy
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently delete the contribution.",
+      text: "This will permanently delete the levy record.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
@@ -48,11 +42,10 @@ export default function HousingLevy() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const res = await Base_Url.delete(`/housing-levy-contributions/${id}`);
-
+      const res = await Base_Url.delete(`/housinglevyrates/delete/${id}`);
       if (res.status !== 200) throw new Error("Failed to delete levy");
 
-      Swal.fire("Deleted!", "Levy contribution deleted.", "success");
+      Swal.fire("Deleted!", "Levy record deleted.", "success");
       fetchLevies();
     } catch (err) {
       Swal.fire("Error!", err.message, "error");
@@ -63,14 +56,16 @@ export default function HousingLevy() {
   const fetchLevies = async () => {
     setLoading(true);
     try {
-      const res = await Base_Url.get("/housing-levy-contributions")
-      console.log("Housing Levy contr: ",res)
-      if(res.status == 200){
-        setLevies(res.data?.data || [])
+      const res = await Base_Url.get("/housinglevyrates/all");
+      console.log("Housing Levy rates: ", res);
+      if (res.status === 200) {
+        setLevies(res.data?.data || []);
       }
     } catch (error) {
-      console.error("Error Fetching House Levy",error)
-    }finally{setLoading(false)}
+      console.error("Error Fetching House Levy", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -82,9 +77,10 @@ export default function HousingLevy() {
     return levies.filter(
       (l) =>
         l.Id.toString().includes(search) ||
-        l.EmployeeAmount.toString().includes(search) ||
-        l.EmployerAmount.toString().includes(search) ||
-        l.Total.toString().includes(search)
+        l.Rate.toString().includes(search) ||
+        (l.StartDate && l.StartDate.toString().includes(search)) ||
+        (l.EndDate && l.EndDate.toString().includes(search)) ||
+        (l.CreatedBy && l.CreatedBy.toLowerCase().includes(search.toLowerCase()))
     );
   }, [levies, search]);
 
@@ -100,7 +96,7 @@ export default function HousingLevy() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-700 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <FaHome className="text-white" /> Housing Levy Contributions
+          <FaHome className="text-white" /> Housing Levy Rates
         </h2>
         <Button
           onClick={() => setDrawerOpen(true)}
@@ -113,7 +109,7 @@ export default function HousingLevy() {
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-center gap-4 justify-between">
         <Input
-          placeholder="Search by amount..."
+          placeholder="Search by rate, date or creator..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -142,11 +138,12 @@ export default function HousingLevy() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-4 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
-          <span>Employee Amount</span>
-          <span>Employer Amount</span>
-          <span>Total</span>
+          <span>Rate (%)</span>
+          <span>Start Date</span>
+          <span>End Date</span>
+          <span>Created By</span>
         </div>
 
         {loading ? (
@@ -154,8 +151,9 @@ export default function HousingLevy() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="grid grid-cols-4 gap-4 bg-gray-50 p-6 rounded"
+                className="grid grid-cols-5 gap-4 bg-gray-50 p-6 rounded"
               >
+                <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
@@ -168,12 +166,13 @@ export default function HousingLevy() {
             {paginatedLevies.map((l) => (
               <div
                 key={l.Id}
-                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{l.Id}</span>
-                <span>{l.EmployeeAmount}</span>
-                <span>{l.EmployerAmount}</span>
-                <span>{l.Total}</span>
+                <span>{l.Rate}</span>
+                <span>{l.StartDate || "-"}</span>
+                <span>{l.EndDate || "-"}</span>
+                <span>{l.CreatedBy || "-"}</span>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -203,7 +202,9 @@ export default function HousingLevy() {
               alt="Not Found"
               className="mx-auto w-42 h-auto"
             />
-            <p className="font-medium text-gray-400">No housing levy records found.</p>
+            <p className="font-medium text-gray-400">
+              No housing levy records found.
+            </p>
           </div>
         )}
       </div>
@@ -240,6 +241,7 @@ export default function HousingLevy() {
           fetchLevies(); // refresh after adding
         }}
       />
+
       {/* Update Drawer */}
       <UpdateHouseLevyDrawer
         open={updateDrawerOpen}

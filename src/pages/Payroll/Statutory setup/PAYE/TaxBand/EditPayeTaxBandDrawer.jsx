@@ -13,11 +13,12 @@ export default function EditPayeTaxBandDrawer({
   taxBand,
 }) {
   const [formData, setFormData] = useState({
-    id: "",
-    taxYear: "",
-    lowerLimit: "",
-    upperLimit: "",
-    rate: "",
+    Id: "",
+    LowerLimit: "",
+    UpperLimit: "",
+    Rate: "",
+    StartDate: "",
+    EndDate: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -25,11 +26,12 @@ export default function EditPayeTaxBandDrawer({
   useEffect(() => {
     if (taxBand) {
       setFormData({
-        id: taxBand.Id,
-        taxYear: taxBand.TaxYear,
-        lowerLimit: taxBand.LowerLimit,
-        upperLimit: taxBand.UpperLimit ?? "",
-        rate: taxBand.Rate,
+        Id: taxBand.Id,
+        LowerLimit: taxBand.LowerLimit,
+        UpperLimit: taxBand.UpperLimit ?? "",
+        Rate: taxBand.Rate,
+        StartDate: taxBand.StartDate ?? "",
+        EndDate: taxBand.EndDate ?? "",
       });
     }
   }, [taxBand]);
@@ -43,15 +45,16 @@ export default function EditPayeTaxBandDrawer({
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/paye-taxbands/${formData.id}`,{
-            id: formData.id,
-            taxYear: Number(formData.taxYear),
-            lowerLimit: Number(formData.lowerLimit),
-            upperLimit:
-              formData.upperLimit === "" ? null : Number(formData.upperLimit),
-            rate: Number(formData.rate),
-          }
-        );
+      const res = await Base_Url.put(
+        `/payetaxbands/update/${formData.Id}`,
+        {
+          LowerLimit: Number(formData.LowerLimit),
+          UpperLimit: formData.UpperLimit === "" ? null : Number(formData.UpperLimit),
+          Rate: Number(formData.Rate),
+          StartDate: formData.StartDate,
+          EndDate: formData.EndDate === "" ? null : formData.EndDate,
+        }
+      );
 
       if (res.status !== 200) throw new Error("Failed to update tax band");
 
@@ -98,22 +101,11 @@ export default function EditPayeTaxBandDrawer({
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Tax Year</Label>
-                  <Input
-                    type="number"
-                    name="taxYear"
-                    value={formData.taxYear}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div>
                   <Label>Lower Limit</Label>
                   <Input
                     type="number"
-                    name="lowerLimit"
-                    value={formData.lowerLimit}
+                    name="LowerLimit"
+                    value={formData.LowerLimit}
                     onChange={handleChange}
                     required
                   />
@@ -123,8 +115,8 @@ export default function EditPayeTaxBandDrawer({
                   <Label>Upper Limit</Label>
                   <Input
                     type="number"
-                    name="upperLimit"
-                    value={formData.upperLimit}
+                    name="UpperLimit"
+                    value={formData.UpperLimit}
                     onChange={handleChange}
                     placeholder="Leave blank for no limit"
                   />
@@ -135,10 +127,32 @@ export default function EditPayeTaxBandDrawer({
                   <Input
                     type="number"
                     step="0.1"
-                    name="rate"
-                    value={formData.rate}
+                    name="Rate"
+                    value={formData.Rate}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+
+                <div>
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    name="StartDate"
+                    value={formData.StartDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    name="EndDate"
+                    value={formData.EndDate}
+                    onChange={handleChange}
+                    placeholder="Leave blank if no end date"
                   />
                 </div>
 

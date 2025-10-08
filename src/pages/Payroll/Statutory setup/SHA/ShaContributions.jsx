@@ -33,8 +33,9 @@ export default function ShaContributions() {
   const fetchContributions = async () => {
     setLoading(true);
     try {
-      const res = await Base_Url.get("/sha-contributions");
+      const res = await Base_Url.get("/sha-rates/all");
       setContributions(res.data?.data || []);
+      console.log("Sha Contribution: ", res);
     } catch (error) {
       console.error("Failed to fetch contributions:", error);
     } finally {
@@ -59,7 +60,7 @@ export default function ShaContributions() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await Base_Url.delete(`/sha-contributions/${id}`);
+          const res = await Base_Url.delete(`/sha-rates/delete/${id}`);
           if (res.status !== 200)
             throw new Error("Failed to delete contribution");
           Swal.fire("Deleted!", "Contribution has been deleted.", "success");
@@ -75,8 +76,9 @@ export default function ShaContributions() {
   const filteredContributions = useMemo(() => {
     return contributions.filter(
       (c) =>
-        c.ContributionRate.toString().includes(search) ||
-        c.ContributionAmount.toString().includes(search)
+        c.Rate.toString().includes(search) ||
+        c.Id.toString().includes(search) ||
+        (c.CreatedBy?.toLowerCase().includes(search.toLowerCase()) ?? false)
     );
   }, [contributions, search]);
 
@@ -137,7 +139,7 @@ export default function ShaContributions() {
         <div className="grid grid-cols-4 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
           <span>Contribution Rate</span>
-          <span>Contribution Amount</span>
+          <span>Effective From</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -163,8 +165,8 @@ export default function ShaContributions() {
                 className="grid grid-cols-4 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{c.Id}</span>
-                <span>{c.ContributionRate}%</span>
-                <span className="text-sm">{c.ContributionAmount}</span>
+                <span>{c.Rate}%</span>
+                <span className="text-sm">{c.EffectiveFrom?.split("T")[0]}</span>
 
                 <div className="flex justify-end gap-2">
                   <Button

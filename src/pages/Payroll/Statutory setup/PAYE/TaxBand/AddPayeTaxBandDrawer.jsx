@@ -8,10 +8,11 @@ import Base_Url from "../../../../../apis/BaseApi";
 
 export default function AddPayeTaxBandDrawer({ open, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
-    taxYear: "",
-    lowerLimit: "",
-    upperLimit: "",
-    rate: "",
+    LowerLimit: "",
+    UpperLimit: "",
+    Rate: "",
+    StartDate: "",
+    EndDate: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -24,19 +25,25 @@ export default function AddPayeTaxBandDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/paye-taxbands",{
-            taxYear: Number(formData.taxYear),
-            lowerLimit: Number(formData.lowerLimit),
-            upperLimit:
-              formData.upperLimit === "" ? null : Number(formData.upperLimit),
-            rate: Number(formData.rate),
-          }
-      );
+      const res = await Base_Url.post("/payetaxbands/create", {
+        LowerLimit: Number(formData.LowerLimit),
+        UpperLimit:
+          formData.UpperLimit === "" ? null : Number(formData.UpperLimit),
+        Rate: Number(formData.Rate),
+        StartDate: formData.StartDate,
+        EndDate: formData.EndDate === "" ? null : formData.EndDate,
+      });
 
       if (res.status !== 200) throw new Error("Failed to create tax band");
 
       Swal.fire("Success!", "Tax band added successfully.", "success");
-      setFormData({ taxYear: "", lowerLimit: "", upperLimit: "", rate: "" });
+      setFormData({
+        LowerLimit: "",
+        UpperLimit: "",
+        Rate: "",
+        StartDate: "",
+        EndDate: "",
+      });
 
       if (onSuccess) onSuccess();
       onClose();
@@ -70,7 +77,9 @@ export default function AddPayeTaxBandDrawer({ open, onClose, onSuccess }) {
           >
             {/* Header */}
             <div className="p-4 flex justify-between items-center bg-indigo-600 rounded-2xl m-2">
-              <h2 className="font-bold text-lg text-white">Add PAYE Tax Band</h2>
+              <h2 className="font-bold text-lg text-white">
+                Add PAYE Tax Band
+              </h2>
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
@@ -80,13 +89,24 @@ export default function AddPayeTaxBandDrawer({ open, onClose, onSuccess }) {
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Tax Year</Label>
+                  <Label>Start Date</Label>
                   <Input
-                    type="number"
-                    name="taxYear"
-                    value={formData.taxYear}
+                    type="date"
+                    name="StartDate"
+                    value={formData.StartDate}
                     onChange={handleChange}
-                    required
+                    required 
+                  />
+                </div>
+
+                <div>
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    name="EndDate"
+                    value={formData.EndDate}
+                    onChange={handleChange}
+                    placeholder="Leave blank if no end date"
                   />
                 </div>
 
