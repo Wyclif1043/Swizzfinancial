@@ -136,10 +136,11 @@ export default function ShaContributions() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-4 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
           <span>Contribution Rate</span>
-          <span>Effective From</span>
+          <span>Start Date</span>
+          <span>End Date</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -162,11 +163,29 @@ export default function ShaContributions() {
             {paginatedContributions.map((c) => (
               <div
                 key={c.Id}
-                className="grid grid-cols-4 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{c.Id}</span>
                 <span>{c.Rate}%</span>
-                <span className="text-sm">{c.EffectiveFrom?.split("T")[0]}</span>
+                <span className="text-sm">
+                  {c.EffectiveFrom
+                    ? new Date(c.EffectiveFrom).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "N/A"}
+                </span>
+
+                <span className="text-sm">
+                  {c.EffectiveTo
+                    ? new Date(c.EffectiveTo).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "N/A"}
+                </span>
 
                 <div className="flex justify-end gap-2">
                   <Button

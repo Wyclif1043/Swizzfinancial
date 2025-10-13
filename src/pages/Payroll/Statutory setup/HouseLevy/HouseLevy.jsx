@@ -80,7 +80,8 @@ export default function HousingLevy() {
         l.Rate.toString().includes(search) ||
         (l.StartDate && l.StartDate.toString().includes(search)) ||
         (l.EndDate && l.EndDate.toString().includes(search)) ||
-        (l.CreatedBy && l.CreatedBy.toLowerCase().includes(search.toLowerCase()))
+        (l.CreatedBy &&
+          l.CreatedBy.toLowerCase().includes(search.toLowerCase()))
     );
   }, [levies, search]);
 
@@ -138,12 +139,13 @@ export default function HousingLevy() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
           <span>Rate (%)</span>
           <span>Start Date</span>
           <span>End Date</span>
           <span>Created By</span>
+          <span>Actions</span>
         </div>
 
         {loading ? (
@@ -170,8 +172,27 @@ export default function HousingLevy() {
               >
                 <span className="font-medium text-green-700">{l.Id}</span>
                 <span>{l.Rate}</span>
-                <span>{l.StartDate || "-"}</span>
-                <span>{l.EndDate || "-"}</span>
+                {/* Start Date */}
+                <span className="text-sm">
+                  {l.StartDate
+                    ? new Date(l.StartDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "N/A"}
+                </span>
+
+                {/* End Date */}
+                <span className="text-sm">
+                  {l.EndDate
+                    ? new Date(l.EndDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "Ongoing"}
+                </span>
                 <span>{l.CreatedBy || "-"}</span>
                 <div className="flex gap-2">
                   <Button

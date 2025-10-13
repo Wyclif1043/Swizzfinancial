@@ -32,13 +32,17 @@ export default function PayeTaxBands() {
   // Fetch tax bands
   const fetchTaxBands = async () => {
     setLoading(true);
+
     try {
       const res = await Base_Url.get("/payetaxbands/all");
-      if (res.status == 200) {
+
+      if (res.status === 200) {
         setTaxBands(res.data?.data || []);
+      } else {
+        console.warn("Unexpected status:", res.status);
       }
     } catch (error) {
-      console.error("Error fetching Tax band: ", error);
+      console.error("Error fetching Tax Bands:", error);
     } finally {
       setLoading(false);
     }
@@ -139,11 +143,13 @@ export default function PayeTaxBands() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-5 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-7 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>ID</span>
           <span>Lower Limit</span>
           <span>Upper Limit</span>
           <span>Rate (%)</span>
+          <span>Start Date</span>
+          <span>End Date</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -168,14 +174,33 @@ export default function PayeTaxBands() {
             {paginatedBands.map((b) => (
               <div
                 key={b.Id}
-                className="grid grid-cols-5 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-7 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-green-700">{b.Id}</span>
-                <span>{b.LowerLimit}</span>
-                <span>{b.UpperLimit ?? "∞"}</span>
+                <span>{b.LowerLimit?.toLocaleString()}</span>
+                <span>
+                  {b.UpperLimit ? b.UpperLimit.toLocaleString() : "∞"}
+                </span>
                 <span>{b.Rate}%</span>
-
-                <div className="flex justify-end gap-2">
+                <span className="text-sm">
+                  {b.StartDate
+                    ? new Date(b.StartDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "N/A"}
+                </span>
+                <span className="text-sm">
+                  {b.EndDate
+                    ? new Date(b.EndDate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "Ongoing"}
+                </span>
+                <span className="flex justify-end gap-2">
                   <Button
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700"
@@ -194,7 +219,7 @@ export default function PayeTaxBands() {
                   >
                     <FaTrash /> Delete
                   </Button>
-                </div>
+                </span>
               </div>
             ))}
           </div>
