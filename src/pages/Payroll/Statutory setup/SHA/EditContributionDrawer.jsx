@@ -9,8 +9,9 @@ import Base_Url from "../../../../apis/BaseApi";
 export default function EditContributionDrawer({ open, onClose, onSuccess, contribution }) {
   const [formData, setFormData] = useState({
     Id: "",
-    ContributionRate: "",
-    ContributionAmount: "",
+    Rate: "",
+    EffectiveFrom: "",
+    EffectiveTo: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -19,8 +20,13 @@ export default function EditContributionDrawer({ open, onClose, onSuccess, contr
     if (contribution) {
       setFormData({
         Id: contribution.Id,
-        ContributionRate: contribution.ContributionRate,
-        ContributionAmount: contribution.ContributionAmount,
+        Rate: contribution.Rate || "",
+        EffectiveFrom: contribution.EffectiveFrom 
+          ? new Date(contribution.EffectiveFrom).toISOString().split('T')[0] 
+          : "",
+        EffectiveTo: contribution.EffectiveTo 
+          ? new Date(contribution.EffectiveTo).toISOString().split('T')[0] 
+          : "",
       });
     }
   }, [contribution]);
@@ -32,7 +38,7 @@ export default function EditContributionDrawer({ open, onClose, onSuccess, contr
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/sha-rates/update/${formData.Id}`,formData);
+      const res = await Base_Url.put(`/sha-rates/update/${formData.Id}`, formData);
       if (res.status !== 200) throw new Error("Failed to update contribution");
 
       Swal.fire("Success", "Contribution updated successfully!", "success");
@@ -78,23 +84,32 @@ export default function EditContributionDrawer({ open, onClose, onSuccess, contr
                   <Input
                     type="number"
                     step="0.01"
-                    value={formData.ContributionRate}
+                    value={formData.Rate}
                     onChange={(e) =>
-                      setFormData({ ...formData, ContributionRate: e.target.value })
+                      setFormData({ ...formData, Rate: e.target.value })
                     }
                     required
                   />
                 </div>
                 <div>
-                  <Label>Contribution Amount</Label>
+                  <Label>Effective From</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.ContributionAmount}
+                    type="date"
+                    value={formData.EffectiveFrom}
                     onChange={(e) =>
-                      setFormData({ ...formData, ContributionAmount: e.target.value })
+                      setFormData({ ...formData, EffectiveFrom: e.target.value })
                     }
                     required
+                  />
+                </div>
+                <div>
+                  <Label>Effective To</Label>
+                  <Input
+                    type="date"
+                    value={formData.EffectiveTo}
+                    onChange={(e) =>
+                      setFormData({ ...formData, EffectiveTo: e.target.value })
+                    }
                   />
                 </div>
                 <Button

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://63e9030f26e2.ngrok-free.app/api";
+const API_URL = "https://d6115c4ab05b.ngrok-free.app/api";
 
 const payrollsetupApiConfig = axios.create(
     {

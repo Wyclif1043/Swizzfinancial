@@ -152,11 +152,11 @@ export default function InsuranceCompanies() {
             {paginatedCompanies.map((c) => (
               <div
                 key={c.Code}
-                className="grid grid-cols-3 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-4 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-indigo-700">{c.Name}</span>
                 <span className="text-sm">{c.Address}</span>
-                {/*<span className="text-sm">{c.Code}</span>*/}
+                <span className="text-sm">{c.Code}</span>
 
                 <div className="flex justify-end gap-2">
                   <Button
