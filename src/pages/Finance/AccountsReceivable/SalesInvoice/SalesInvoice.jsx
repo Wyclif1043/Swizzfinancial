@@ -19,7 +19,7 @@ import AddSalesInvoiceDrawer from "./AddSalesInvoiceDrawer";
 import UpdateSalesInvoiceDrawer from "./UpdateSalesInvoiceDrawer";
 import { MdOutlinePostAdd } from "react-icons/md";
 
-export default function SalesInvoices() {
+export default function SalesInvoice() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedInvoice, setExpandedInvoice] = useState(null);
@@ -151,11 +151,10 @@ export default function SalesInvoices() {
                     {new Date(invoice.DueDate).toLocaleDateString()}
                   </span>
                   <span
-                    className={`text-sm rounded-2xl text-center flex items-center justify-center px-3 py-1 col-span-2 mr-4 ${
-                      invoice.ApprovalStatus === "Approved"
+                    className={`text-sm rounded-2xl text-center flex items-center justify-center px-3 py-1 col-span-2 mr-4 ${invoice.ApprovalStatus === "Approved"
                         ? "bg-green-600 text-white"
                         : "bg-red-600 text-white"
-                    }`}
+                      }`}
                   >
                     {invoice.ApprovalStatus || "Pending"}
                   </span>
