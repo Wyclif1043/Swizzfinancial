@@ -79,7 +79,7 @@ export default function App() {
           <Route path="/Procurement/Biding" element={<BidAnalysis />} />
 
           {/* Finance */}
-          {/* <Route path="Finance" element={<Finance />} />
+          <Route path="Finance" element={<Finance />} />
           <Route path="Finance/ChartsOfAccount" element={<ChartOfAccounts />} />
           <Route path="Finance/PostingJournal" element={<PostingJournal />} />
           <Route path="Finance/BanksSetup" element={<BankLinkages />} />
@@ -99,7 +99,7 @@ export default function App() {
           <Route path="AccountsReceivable" element={<h1>Accounts Receivable</h1>} />
           <Route path="BudgetingForecasting" element={<h1>Budgeting & Forecasting</h1>} />
           <Route path="BankReconciliation" element={<h1>Bank Reconciliation</h1>} />
-          <Route path="FinancialReporting" element={<h1>Financial Reporting</h1>} /> */}
+          <Route path="FinancialReporting" element={<h1>Financial Reporting</h1>} />
 
           {/* Inventory */}
           <Route path="Inventory" element={<h1>Inventory</h1>} />
