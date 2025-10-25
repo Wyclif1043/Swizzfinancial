@@ -19,7 +19,7 @@ import AddSalesInvoiceDrawer from "./AddSalesInvoiceDrawer";
 import UpdateSalesInvoiceDrawer from "./UpdateSalesInvoiceDrawer";
 import { MdOutlinePostAdd } from "react-icons/md";
 
-export default function salesInvoice() {
+export default function SalesInvoice() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedInvoice, setExpandedInvoice] = useState(null);

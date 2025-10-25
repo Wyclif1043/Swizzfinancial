@@ -46,8 +46,8 @@ import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/Project
 import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
-import PostingJournal from "./pages/Finance/postjournal/PostingJournal.jsx";
-import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
+//import PostingJournal from "./pages/Finance/postjournal/PostingJournal.jsx";
+//import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
 
 
 export default function App() {
@@ -81,10 +81,10 @@ export default function App() {
           {/* Finance */}
           <Route path="Finance" element={<Finance />} />
           <Route path="Finance/ChartsOfAccount" element={<ChartOfAccounts />} />
-          <Route path="Finance/PostingJournal" element={<PostingJournal />} />
+          {/* <Route path="Finance/PostingJournal" element={<PostingJournal />} /> */}
           <Route path="Finance/BanksSetup" element={<BankLinkages />} />
           <Route path="Finance/AccountConfiguration" element={<AccountConfiguration />} />
-          <Route path="Finance/salesInvoice" element={<SalesInvoice />} />
+          {/* <Route path="Finance/salesInvoice" element={<SalesInvoice />} /> */}
           <Route path="Finance/salesCreditMemo" element={<SalesCreditMemo />} />
           <Route path="Finance/Setup" element={<Setup />} />
           <Route path="Finance/PaymentVoucher" element={<PaymentVoucher />} />
