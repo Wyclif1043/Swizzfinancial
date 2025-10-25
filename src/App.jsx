@@ -8,7 +8,6 @@ import Invitem from "./pages/Inventory/Items/Invitem";
 import InvJournal from "./pages/Inventory/Journals/InvJournal";
 import InvTransactions from "./pages/Inventory/Transcations/InvTransactions";
 import ChartOfAccounts from "./pages/Finance/COA/ChartsOfAccount";
-import PostingJournal from "./pages/Finance/POST/postingJournal";
 
 
 //import Home from "./pages/Home";
@@ -48,7 +47,8 @@ import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/Project
 import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
-
+import PostingJournal from "./pages/Finance/postjournal/postingJournal.jsx";
+-
 
 export default function App() {
   return (
