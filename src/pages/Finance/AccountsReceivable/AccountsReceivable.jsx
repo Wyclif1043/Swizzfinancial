@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { MdPayments } from "react-icons/md";
 import SalesCreditMemo from "./SalesCreditMemo/SalesCreditMemo";
-import SalesInvoices from "./SalesInvoice/salesInvoice";
+import SalesInvoices from "./Salesinvoice/salesInvoice";
 
 
 
@@ -13,8 +13,8 @@ export default function AccountsReceivable() {
 
 
   const users = [
-    { id: 1, name: "Sales Credit Memo",  subtitle: "Credit Memo" },
-    { id: 2, name: "Sales Invoices",  subtitle: "Invoices" },
+    { id: 1, name: "Sales Credit Memo", subtitle: "Credit Memo" },
+    { id: 2, name: "Sales Invoices", subtitle: "Invoices" },
   ];
 
   const user = users.find((u) => u.id === selectedUserId) || users[0];
@@ -22,9 +22,9 @@ export default function AccountsReceivable() {
   const renderContent = () => {
     switch (user.name) {
       case "Sales Credit Memo":
-        return <SalesCreditMemo/>;
+        return <SalesCreditMemo />;
       case "Sales Invoices":
-        return <SalesInvoices/>;
+        return <SalesInvoices />;
       default:
         return <p>Select an option from the sidebar</p>;
     }

@@ -36,7 +36,7 @@ import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/Acc
 import PayrollSetup from "./pages/HR/PayrollSetup/PayrollSetup.jsx";
 import StatutorySetup from "./pages/HR/Statutory setup/StatutorySetup.jsx";
 import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
-import SalesInvoices from "./pages/Finance/AccountsReceivable/SalesInvoice/salesInvoice.jsx";
+import SalesInvoices from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
 import SalesCreditMemo from "./pages/Finance/AccountsReceivable/SalesCreditMemo/SalesCreditMemo.jsx";
 import Setup from "./pages/Finance/Setup/Setup.jsx";
 import AccountPayable from "./pages/Finance/AccountPayable/AccountPayable.jsx";
