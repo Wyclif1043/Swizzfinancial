@@ -36,7 +36,6 @@ import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/Acc
 import PayrollSetup from "./pages/HR/PayrollSetup/PayrollSetup.jsx";
 import StatutorySetup from "./pages/HR/Statutory setup/StatutorySetup.jsx";
 import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
-import SalesInvoices from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
 import SalesCreditMemo from "./pages/Finance/AccountsReceivable/SalesCreditMemo/SalesCreditMemo.jsx";
 import Setup from "./pages/Finance/Setup/Setup.jsx";
 import AccountPayable from "./pages/Finance/AccountPayable/AccountPayable.jsx";
@@ -48,6 +47,7 @@ import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmissi
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
 import PostingJournal from "./pages/Finance/postjournal/postingJournal.jsx";
+import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
 
 
 export default function App() {
@@ -84,7 +84,7 @@ export default function App() {
           <Route path="Finance/PostingJournal" element={<PostingJournal />} />
           <Route path="Finance/BanksSetup" element={<BankLinkages />} />
           <Route path="Finance/AccountConfiguration" element={<AccountConfiguration />} />
-          <Route path="Finance/salesInvoice" element={<SalesInvoices />} />
+          <Route path="Finance/salesInvoice" element={<SalesInvoice />} />
           <Route path="Finance/salesCreditMemo" element={<SalesCreditMemo />} />
           <Route path="Finance/Setup" element={<Setup />} />
           <Route path="Finance/PaymentVoucher" element={<PaymentVoucher />} />
