@@ -48,7 +48,7 @@ import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmissi
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
 import PostingJournal from "./pages/Finance/postjournal/postingJournal.jsx";
--
+
 
 export default function App() {
   return (
