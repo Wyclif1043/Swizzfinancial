@@ -46,7 +46,7 @@ import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/Project
 import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
-import PostingJournal from "./pages/Finance/postjournal/postingJournal.jsx";
+import PostingJournal from "./pages/Finance/postjournal/PostingJournal.jsx";
 import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
 
 
