@@ -87,7 +87,7 @@ const reconciles = [
 
 export default function Finance() {
   return (
-    <div className="min-h-screen m-8 p-3 md:p-10 bg-white rounded-2xl shadow-2xl">
+    <div className="min-h-screen m-1 p-1 md:p-3">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}

@@ -19,8 +19,10 @@ import Drafts from "./Drafts";
 import Grns from "./Grns";
 import PartiallyReceived from "./PartiallyReceived";
 import FullyReceived from "./FullyReceived";
+import AddPurchaseOrderDrawer from "./AddPurchaseOrderDrawer";
 
 export default function PurchaseOrders() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   return (
     <div className="bg-white m-8 px-8 py-8 shadow-2xl rounded-lg relative">
       {/* Header */}
@@ -28,9 +30,13 @@ export default function PurchaseOrders() {
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <FaLayerGroup /> Purchase Orders
         </h2>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2">
-          <FaPlus /> Add PO
+        <Button
+          onClick={() => setDrawerOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700"
+        >
+          + New Purchase Order
         </Button>
+
       </div>
 
       {/* Tabs */}
@@ -85,6 +91,11 @@ export default function PurchaseOrders() {
           <FullyReceived />
         </TabsContent>
       </Tabs>
+      <AddPurchaseOrderDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onSuccess={() => console.log("PO created successfully")}
+      />
     </div>
   );
 }
