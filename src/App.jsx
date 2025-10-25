@@ -7,7 +7,7 @@ import InvUom from "./pages/Inventory/UnitOfMeasure/InvUom";
 import Invitem from "./pages/Inventory/Items/Invitem";
 import InvJournal from "./pages/Inventory/Journals/InvJournal";
 import InvTransactions from "./pages/Inventory/Transcations/InvTransactions";
-import ChartOfAccounts from "./pages/Finance/COA/ChartsOfAccount";
+//import ChartOfAccounts from "./pages/Finance/COA/ChartsOfAccount";
 
 
 //import Home from "./pages/Home";
@@ -23,24 +23,24 @@ import HR from "./pages/HR/HR";
 import Employees from "./pages/HR/Employees";
 import Departments from "./pages/HR/Departments";
 import Procument from "./pages/Procurement/Procument";
-import Finance from "./pages/Finance/Finance";
-import GeneralLedger from "./pages/Finance/GeneralLedger";
+//import Finance from "./pages/Finance/Finance";
+//import GeneralLedger from "./pages/Finance/GeneralLedger";
 
 import InvLocation from "./pages/Inventory/locations/InvLocation";
 import InventoryDashboard from "./pages/Inventory/InventoryDashboard.jsx";
 import ProVendors from "./pages/Procurement/Vendors/ProVendors.jsx";
 import ProRequisitions from "./pages/Procurement/Requisitions/ProRequisitions.jsx";
 import PurchaseOrder from "./pages/Procurement/PurchaseOrder/PurchaseOrder.jsx";
-import BankLinkages from "./pages/Finance/Setup/Bank/BankLinkages.jsx";
-import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/AccountConfiguration.jsx";
+//import BankLinkages from "./pages/Finance/Setup/Bank/BankLinkages.jsx";
+//import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/AccountConfiguration.jsx";
 import PayrollSetup from "./pages/HR/PayrollSetup/PayrollSetup.jsx";
 import StatutorySetup from "./pages/HR/Statutory setup/StatutorySetup.jsx";
 import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
-import SalesCreditMemo from "./pages/Finance/AccountsReceivable/SalesCreditMemo/SalesCreditMemo.jsx";
-import Setup from "./pages/Finance/Setup/Setup.jsx";
-import AccountPayable from "./pages/Finance/AccountPayable/AccountPayable.jsx";
-import AccountsReceivable from "./pages/Finance/AccountsReceivable/AccountsReceivable.jsx";
-import PaymentVoucher from "./pages/Finance/PaymentVoucher/PaymentVoucher.jsx";
+//import SalesCreditMemo from "./pages/Finance/AccountsReceivable/SalesCreditMemo/SalesCreditMemo.jsx";
+//import Setup from "./pages/Finance/Setup/Setup.jsx";
+//import AccountPayable from "./pages/Finance/AccountPayable/AccountPayable.jsx";
+//import AccountsReceivable from "./pages/Finance/AccountsReceivable/AccountsReceivable.jsx";
+//import PaymentVoucher from "./pages/Finance/PaymentVoucher/PaymentVoucher.jsx";
 import RequestForQuotation from "./pages/Procurement/RFQ/RequestForQuotation.jsx";
 import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/ProjectsWithBudgets.jsx";
 import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
@@ -79,21 +79,21 @@ export default function App() {
           <Route path="/Procurement/Biding" element={<BidAnalysis />} />
 
           {/* Finance */}
-          <Route path="Finance" element={<Finance />} />
+          {/* <Route path="Finance" element={<Finance />} />
           <Route path="Finance/ChartsOfAccount" element={<ChartOfAccounts />} />
-          {/* <Route path="Finance/PostingJournal" element={<PostingJournal />} /> */}
+          <Route path="Finance/PostingJournal" element={<PostingJournal />} />
           <Route path="Finance/BanksSetup" element={<BankLinkages />} />
           <Route path="Finance/AccountConfiguration" element={<AccountConfiguration />} />
-          {/* <Route path="Finance/salesInvoice" element={<SalesInvoice />} /> */}
+          <Route path="Finance/salesInvoice" element={<SalesInvoice />} />
           <Route path="Finance/salesCreditMemo" element={<SalesCreditMemo />} />
           <Route path="Finance/Setup" element={<Setup />} />
           <Route path="Finance/PaymentVoucher" element={<PaymentVoucher />} />
-          <Route path="Finance/GeneralLedger" element={<GeneralLedger />} />
+          <Route path="Finance/GeneralLedger" element={<GeneralLedger />} /> */}
           <Route path="GeneralLedger/reports" element={<h1>GL Reports</h1>} />
           <Route path="GeneralLedger/settings" element={<h1>GL Settings</h1>} />
 
-          <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
-          <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} />
+          {/* <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
+          <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} /> */}
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />
           <Route path="AccountsReceivable" element={<h1>Accounts Receivable</h1>} />
