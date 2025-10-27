@@ -101,35 +101,35 @@ const mockWorkspaces = [
       },*/
     ],
   },
-  // {
-  //   id: "ws3",
-  //   name: "Finance",
-  //   title: "Finance",
-  //   icon: <RiBankFill className="text-2xl" />,
-  //   dms: [
-  //     { id: "Finance/Setup", name: "Setup", sublinks: [], },
-  //     { id: "Finance/ChartsOfAccount", name: "Charts Of Account", sublinks: [] },
-  //     { id: "Finance/PostingJournal", name: "Posting Journal", sublinks: [] },
-  //     { id: "Finance/AccountsPayable", name: "Accounts Payable", sublinks: [] },
-  //     { id: "Finance/AccountsReceivable", name: "Accounts Receivable", sublinks: [] },
-  //     { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
+  {
+    id: "ws3",
+    name: "Finance",
+    title: "Finance",
+    icon: <RiBankFill className="text-2xl" />,
+    dms: [
+      { id: "Finance/Setup", name: "Setup", sublinks: [], },
+      { id: "Finance/ChartsOfAccount", name: "Charts Of Account", sublinks: [] },
+      { id: "Finance/PostingJournal", name: "Posting Journal", sublinks: [] },
+      { id: "Finance/AccountsPayable", name: "Accounts Payable", sublinks: [] },
+      { id: "Finance/AccountsReceivable", name: "Accounts Receivable", sublinks: [] },
+      { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
 
-  //     //{ id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
-  //     //{ id: "Finance/PurchaseCreditMemo", name: "Purchase Credit Memo", sublinks: [] },
-  //     //{ id: "Finance/salesInvoice", name: "Sales Invoice", sublinks: [] },
-  //     //{ id: "Finance/salesCreditMemo", name: "Sales Credit Memo", sublinks: [] },
-  //     //{ id: "Finance/BankLinkages", name: "Bank Linkages", sublinks: [] },
-  //     /*{
-  //       id: "GeneralLedger",
-  //       name: "General Ledger",
-  //       sublinks: [
-  //         { id: "reports", name: "Reports" },
-  //         { id: "settings", name: "Settings" },
-  //       ],
-  //     },
-  //     */
-  //   ],
-  // },
+      //{ id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
+      //{ id: "Finance/PurchaseCreditMemo", name: "Purchase Credit Memo", sublinks: [] },
+      //{ id: "Finance/salesInvoice", name: "Sales Invoice", sublinks: [] },
+      //{ id: "Finance/salesCreditMemo", name: "Sales Credit Memo", sublinks: [] },
+      //{ id: "Finance/BankLinkages", name: "Bank Linkages", sublinks: [] },
+      /*{
+        id: "GeneralLedger",
+        name: "General Ledger",
+        sublinks: [
+          { id: "reports", name: "Reports" },
+          { id: "settings", name: "Settings" },
+        ],
+      },
+      */
+    ],
+  },
   {
     id: "ws4",
     name: "Inventory",
