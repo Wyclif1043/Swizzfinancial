@@ -29,12 +29,13 @@ export default function Branches() {
     try {
       const res = await Base_Url.get("/employee-branches")
       console.log(res)
-      if(res.status == 200){
+      if (res.status == 200) {
         setBranches(res.data?.data || []);
       }
     } catch (error) {
       console.log(error)
-    }finally{setLoading(false)}
+    } finally { setLoading(false) }
+
   };
 
   useEffect(() => {
@@ -43,33 +44,34 @@ export default function Branches() {
 
   // Delete Handler
   const handleDelete = async (code) => {
-  Swal.fire({
-    title: "Are you sure?",
-    text: "This will permanently remove the branch entry.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#dc2626",
-    cancelButtonColor: "#6b7280",
-    confirmButtonText: "Yes, delete it!",
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        const res = await Base_Url.delete(`/employee-branches/${code}`);
-        console.log(res);
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will permanently remove the branch entry.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await Base_Url.delete(`/employee-branches/${code}`);
+          console.log(res);
 
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Failed to delete branch");
+          if (res.status !== 200 && res.status !== 201) {
+            throw new Error("Failed to delete branch");
+
+          }
+
+          Swal.fire("Deleted!", "Branch has been deleted.", "success");
+          fetchBranches();
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error!", "Failed to delete branch.", "error");
         }
-
-        Swal.fire("Deleted!", "Branch has been deleted.", "success");
-        fetchBranches();
-      } catch (err) {
-        console.error(err);
-        Swal.fire("Error!", "Failed to delete branch.", "error");
       }
-    }
-  });
-};
+    });
+  };
 
 
   // Filtered and paginated branches

@@ -19,9 +19,10 @@ export default function AddBankDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/employee-banks",formData);
+      const res = await Base_Url.post("/employee-banks", formData);
 
-      if (res.status != 200 ||res.status != 201 ) throw new Error("Failed to add bank");
+
+      if (res.status != 200 || res.status != 201) throw new Error("Failed to add bank");
 
       Swal.fire("Success", "Bank added successfully!", "success");
 

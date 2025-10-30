@@ -343,8 +343,6 @@
 
 
 
-
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -404,14 +402,14 @@ export default function UpdatePurchaseCreditMemoDrawer({ open, onClose, onSucces
 
   // Fetch Chart of Accounts & Memo Types
   useEffect(() => {
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetChartOfAccount", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetChartOfAccount`, {
       headers: { "ngrok-skip-browser-warning": "true" },
     })
       .then((res) => res.json())
       .then((data) => setChartOfAccounts(Array.isArray(data) ? data : data.Data || []))
       .catch(() => setChartOfAccounts([]));
 
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetPurchaseInvoiceEntryTypes", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseInvoiceEntryTypes`, {
       headers: { "ngrok-skip-browser-warning": "true" },
     })
       .then((res) => res.json())
@@ -466,7 +464,7 @@ export default function UpdatePurchaseCreditMemoDrawer({ open, onClose, onSucces
     setLoading(true);
     try {
       const res = await fetch(
-        "https://0e05b3ea37cd.ngrok-free.app/api/values/UpdatePurchaseCreditMemo",
+        `${import.meta.env.VITE_APP_FIN_URL}/api/values/UpdatePurchaseCreditMemo`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

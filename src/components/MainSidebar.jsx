@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CgGhost } from "react-icons/cg";
 import { useEffect } from "react";
@@ -53,9 +54,9 @@ export default function MainSidebar({ workspace }) {
                         className={`block px-2 py-1 rounded cursor-pointer transition-colors
                           ${isActive ? "bg-indigo-700" : "hover:bg-indigo-700"}`}
                       >
-                       <div className="flex justify-between items-center"> {dm.name} <IoIosArrowForward /></div>
+                        <div className="flex justify-between items-center"> {dm.name} <IoIosArrowForward /></div>
                       </Link>
-                      
+
                     </PopoverTrigger>
                     <PopoverContent
                       side="right"
@@ -92,7 +93,7 @@ export default function MainSidebar({ workspace }) {
                   </Link>
                 )}
 
-                
+
               </li>
             );
           })}

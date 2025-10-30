@@ -20,7 +20,7 @@ const mockWorkspaces = [
     name: "Payroll",
     title: "Payroll",
     icon: <GrResources className="text-2xl" />,
-    dms: [ 
+    dms: [
       {
         id: "Payroll/payrollsetup",
         name: "Payroll Setup",
@@ -34,9 +34,10 @@ const mockWorkspaces = [
       {
         id: "Payroll/Accounts",
         name: "Accounts",
-        sublinks:[],
+        sublinks: [],
       },
-      { id: "Payroll/Employees",
+      {
+        id: "Payroll/Employees",
         name: "Employees Setup",
         sublinks: [],
       },
@@ -54,10 +55,41 @@ const mockWorkspaces = [
         sublinks: []
       },
       {
+        id: "Procurement/ProjectsWithBudgets",
+        name: "Projects Budgets",
+        sublinks: []
+      },
+      {
         id: "Procurement/requisitions",
         name: "Requisitions",
         sublinks: []
       },
+
+      {
+        id: "Procurement/RFQ",
+        name: "Request For Quotation",
+        sublinks: []
+      },
+
+
+      {
+        id: "Procurement/SubmitQuotation",
+        name: "Submit Quotation",
+        sublinks: []
+      },
+      {
+        id: "Procurement/Quotation",
+        name: "Bid Analysis",
+        sublinks: []
+      },
+
+
+
+      // {
+      //   id: "Procurement/Biding",
+      //   name: "Bidding",
+      //   sublinks: []
+      // },
       {
         id: "Procurement/StoreRequisitions",
         name: "Store Requisitions",
@@ -68,7 +100,8 @@ const mockWorkspaces = [
         name: "Purchase Order",
         sublinks: []
       },
-      
+
+
       /*{
         id: "maria",
         name: "Procure Two",
@@ -85,19 +118,17 @@ const mockWorkspaces = [
     title: "Finance",
     icon: <RiBankFill className="text-2xl" />,
     dms: [
-      {    
-        id:"Finance",  
-        name: "Setup",
-        sublinks: [
-          { id: "BanksSetup", name: "Banks Setup" },
-          { id: "AccountConfiguration", name: "Accounts Configuration" },
-        ],
-      },
-     
+      { id: "Finance/Setup", name: "Setup", sublinks: [], },
       { id: "Finance/ChartsOfAccount", name: "Charts Of Account", sublinks: [] },
       { id: "Finance/PostingJournal", name: "Posting Journal", sublinks: [] },
-      { id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
-      { id: "Finance/PurchaseCreditMemo", name: "Purchase Credit Memo", sublinks: [] },
+      { id: "Finance/AccountsPayable", name: "Accounts Payable", sublinks: [] },
+      { id: "Finance/AccountsReceivable", name: "Accounts Receivable", sublinks: [] },
+      { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
+
+      //{ id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
+      //{ id: "Finance/PurchaseCreditMemo", name: "Purchase Credit Memo", sublinks: [] },
+      //{ id: "Finance/salesInvoice", name: "Sales Invoice", sublinks: [] },
+      //{ id: "Finance/salesCreditMemo", name: "Sales Credit Memo", sublinks: [] },
       //{ id: "Finance/BankLinkages", name: "Bank Linkages", sublinks: [] },
       /*{
         id: "GeneralLedger",
@@ -107,8 +138,7 @@ const mockWorkspaces = [
           { id: "settings", name: "Settings" },
         ],
       },
-      { id: "AccountsPayable", name: "Accounts Payable", sublinks: [] },
-      { id: "AccountsReceivable", name: "Accounts Receivable", sublinks: [] },*/
+      */
     ],
   },
   {
@@ -117,14 +147,14 @@ const mockWorkspaces = [
     title: "Invent..",
     icon: <MdInventory2 className="text-2xl" />,
     dms: [
-     /* {
-        id: "StockReceipts",
-        name: "Stock Receipts",
-        sublinks: [
-          { id: "report", name: "Receipt Reports" },
-          { id: "history", name: "History" },
-        ],
-      },*/
+      /* {
+         id: "StockReceipts",
+         name: "Stock Receipts",
+         sublinks: [
+           { id: "report", name: "Receipt Reports" },
+           { id: "history", name: "History" },
+         ],
+       },*/
 
       { id: "Inventory/invCategories", name: "Categories", sublinks: [] },
       { id: "Inventory/invUnitOfMeasure", name: "Unit Of Measure", sublinks: [] },
@@ -165,7 +195,7 @@ export default function Layout({ children }) {
         <MiniSidebar
           workspaces={mockWorkspaces}
           activeWorkspace={currentWorkspace.id} // maintain active highlight
-          onSelect={() => {}} // can be empty; URL drives the selection
+          onSelect={() => { }} // can be empty; URL drives the selection
         />
         <MainSidebar workspace={currentWorkspace} />
 

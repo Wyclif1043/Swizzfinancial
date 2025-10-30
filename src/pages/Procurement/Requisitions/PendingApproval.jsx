@@ -32,6 +32,8 @@ export default function PendingApproval() {
       .catch(() => setLoading(false));
   };
 
+  console.log(requisitions);
+
   useEffect(() => {
     fetchRequisitions();
   }, []);

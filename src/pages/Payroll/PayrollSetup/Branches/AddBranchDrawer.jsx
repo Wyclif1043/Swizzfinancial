@@ -36,6 +36,7 @@ export default function AddBranchDrawer({ open, onClose, onSuccess }) {
       }
     };
     fetchBanks();
+
   }, []);
 
   const handleSubmit = async (e) => {
@@ -44,6 +45,7 @@ export default function AddBranchDrawer({ open, onClose, onSuccess }) {
 
     try {
       const res = await Base_Url.post("/employee-branches", formData);
+
 
       const resultresponse = res.data?.data;
       console.log(resultresponse);

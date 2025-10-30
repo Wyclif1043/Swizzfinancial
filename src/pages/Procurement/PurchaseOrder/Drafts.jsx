@@ -75,10 +75,10 @@ export default function Drafts() {
             }
           );
 
-          
+
           const responsedata = await res.json();
           console.log(responsedata);
-          
+
           if (!res.ok) {
             Swal.fire("Error!", responsedata.message, "error");
           } else {
@@ -231,45 +231,45 @@ export default function Drafts() {
       </div>
 
       {/* Modal */}
-{showModal && (
-  <div className="fixed inset-0 flex items-center justify-center z-50">
-    {/* Backdrop */}
-    <div
-      className="absolute inset-0 bg-black opacity-50" // backdrop with 80% black
-      onClick={closeModal} // close modal when backdrop is clicked
-    ></div>
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black opacity-50" // backdrop with 80% black
+            onClick={closeModal} // close modal when backdrop is clicked
+          ></div>
 
-    {/* Modal Content */}
-    <div className="relative bg-white rounded-lg shadow-lg p-6 w-96 z-50">
-      <h3 className="text-lg font-semibold mb-4">
-        Enter Quantity for Purchase Order
-      </h3>
-      <input
-        type="number"
-        min="1"
-        placeholder="Enter quantity"
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-        className="w-full border rounded px-3 py-2 mb-4"
-      />
-      <div className="flex justify-end gap-2">
-        <Button
-          variant="outline"
-          className="bg-gray-300 text-black hover:bg-gray-400"
-          onClick={closeModal}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="bg-indigo-600 text-white hover:bg-indigo-700"
-          onClick={handleConvertToGrn}
-        >
-          Submit
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-96 z-50">
+            <h3 className="text-lg font-semibold mb-4">
+              Enter Quantity for Purchase Order
+            </h3>
+            <input
+              type="number"
+              min="1"
+              placeholder="Enter quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="w-full border rounded px-3 py-2 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                className="bg-gray-300 text-black hover:bg-gray-400"
+                onClick={closeModal}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-indigo-600 text-white hover:bg-indigo-700"
+                onClick={handleConvertToGrn}
+              >
+                Submit
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

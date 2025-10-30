@@ -406,23 +406,26 @@ export default function AddPurchaseCreditMemoDrawer({ open, onClose, onSuccess }
   const [memoTypes, setMemoTypes] = useState([]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
 
+
+
+  
   // Fetch data
   useEffect(() => {
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetPurchaseInvoices", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseInvoices`, {
       headers: { "ngrok-skip-browser-warning": "true" }
     })
       .then(res => res.json())
       .then(data => setPurchaseInvoices(data.Data || []))
       .catch(() => setPurchaseInvoices([]));
 
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetChartOfAccount", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetChartOfAccount`, {
       headers: { "ngrok-skip-browser-warning": "true" }
     })
       .then(res => res.json())
       .then(data => setChartOfAccounts(Array.isArray(data) ? data : data.Data || []))
       .catch(() => setChartOfAccounts([]));
 
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetPurchaseInvoiceEntryTypes", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseInvoiceEntryTypes`, {
       headers: { "ngrok-skip-browser-warning": "true" }
     })
       .then(res => res.json())
@@ -497,7 +500,7 @@ export default function AddPurchaseCreditMemoDrawer({ open, onClose, onSuccess }
     setLoading(true);
     try {
       const res = await fetch(
-        "https://0e05b3ea37cd.ngrok-free.app/api/values/AddPurchaseCreditMemo",
+        `${import.meta.env.VITE_APP_FIN_URL}/api/values/AddPurchaseCreditMemo`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },

@@ -32,10 +32,11 @@ export default function EditBankDrawer({ open, onClose, onSuccess, bank }) {
 
     try {
       const res = await Base_Url.put(
-        `/employee-banks/${bank.Code}`,formData
+        `/employee-banks/${bank.Code}`, formData
+
       );
 
-      console.log("passed")  
+      console.log("passed")
       const resultresponse = await res.json();
       console.log(resultresponse);
       console.log(res);

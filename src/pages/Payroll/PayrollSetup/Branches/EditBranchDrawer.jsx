@@ -40,6 +40,7 @@ export default function EditBranchDrawer({ open, onClose, onSuccess, branch }) {
       }
     };
     fetchbranches();
+
   }, []);
 
   // Prefill form when editing
@@ -59,8 +60,9 @@ export default function EditBranchDrawer({ open, onClose, onSuccess, branch }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/employee-branches/${branch.Code}`,formData);
+      const res = await Base_Url.put(`/employee-branches/${branch.Code}`, formData);
       if (res.status !== 200) throw new Error("Failed to update branch");
+
 
       Swal.fire("Success", "Branch updated successfully!", "success");
 

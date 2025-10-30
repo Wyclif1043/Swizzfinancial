@@ -132,50 +132,50 @@ export default function AddStoreRequisitionDrawer({ open, onClose, onSuccess }) 
 
 
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const payload = {
-      RequisitionNumber: `REQ-${new Date().getFullYear()}-${Date.now()}`, // or from form
-      RequesterID: formData.RequestedBy,
-      DepartmentID: formData.DepartmentId,
-      RequestDate: new Date(formData.RequestDate).toISOString(),
-      RequiredDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), // or form input
-      Status: "Pending",
-      Remarks: formData.Purpose,
-      CreatedBy: formData.RequestedBy, // or logged-in user
-      Lines: formData.Lines.map((line) => ({
-        ItemID: line.ItemId,
-        ItemDescription: line.ItemDescription,
-        QuantityRequested: line.Quantity,
-        QuantityIssued: 0,
-        UnitPrice: line.UnitPrice,
-        Remarks: line.AccountCode || "",
-      })),
-    };
+    try {
+      const payload = {
+        RequisitionNumber: `REQ-${new Date().getFullYear()}-${Date.now()}`, // or from form
+        RequesterID: formData.RequestedBy,
+        DepartmentID: formData.DepartmentId,
+        RequestDate: new Date(formData.RequestDate).toISOString(),
+        RequiredDate: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(), // or form input
+        Status: "Pending",
+        Remarks: formData.Purpose,
+        CreatedBy: formData.RequestedBy, // or logged-in user
+        Lines: formData.Lines.map((line) => ({
+          ItemID: line.ItemId,
+          ItemDescription: line.ItemDescription,
+          QuantityRequested: line.Quantity,
+          QuantityIssued: 0,
+          UnitPrice: line.UnitPrice,
+          Remarks: line.AccountCode || "",
+        })),
+      };
 
-    const res = await fetch(`${import.meta.env.VITE_APP_PRO_URL}/api/storerequisition`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(`${import.meta.env.VITE_APP_PRO_URL}/api/storerequisition`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) throw new Error("Failed to add requisition");
+      if (!res.ok) throw new Error("Failed to add requisition");
 
-    Swal.fire("Success", "Requisition added successfully!", "success");
-    onSuccess?.();
-    onClose();
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "Failed to add requisition.", "error");
-  } finally {
-    setLoading(false);
-  }
-};
+      Swal.fire("Success", "Requisition added successfully!", "success");
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to add requisition.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -481,6 +481,7 @@ const handleSubmit = async (e) => {
                                   )
                                 }
                               />
+
                               <Input
                                 type="number"
                                 placeholder="Unit Price"

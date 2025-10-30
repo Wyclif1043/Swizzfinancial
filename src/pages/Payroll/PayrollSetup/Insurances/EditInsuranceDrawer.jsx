@@ -30,7 +30,8 @@ export default function EditInsuranceDrawer({ open, onClose, onSuccess, company 
     setLoading(true);
 
     try {
-      const res = await Base_Url.put(`/employee-insurance-companies/${formData.Code}`,formData);
+      const res = await Base_Url.put(`/employee-insurance-companies/${formData.Code}`, formData);
+
 
       if (res.status !== 200) throw new Error("Failed to update");
       Swal.fire("Success", "Insurance company updated successfully!", "success");

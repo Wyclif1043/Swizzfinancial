@@ -100,7 +100,7 @@ export default function ProVendors() {
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
         <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
-           <span className="col-span-2">Name</span>
+          <span className="col-span-2">Name</span>
           <span className="col-span-1">Code</span>
           <span className="col-span-2">Phone</span>
           <span className="col-span-3">Email</span>
@@ -143,11 +143,10 @@ export default function ProVendors() {
                     {vendor.Email}
                   </span>
                   <span
-                    className={`text-sm  rounded-2xl text-center flex items-center justify-center p-1 col-span-1 ${
-                      vendor.IsActive
+                    className={`text-sm  rounded-2xl text-center flex items-center justify-center p-1 col-span-1 ${vendor.IsActive
                         ? "text-white bg-green-600"
                         : "text-white bg-red-600"
-                    }`}
+                      }`}
                   >
                     {vendor.IsActive ? "Active" : "Inactive"}
                   </span>
@@ -179,35 +178,35 @@ export default function ProVendors() {
                   </div>
 
                   {/* Actions */}
-                    <div className="col-span-2 flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 p-0"
-                          >
-                            <FaEllipsisV className="h-4 w-4 text-gray-600" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-32">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditVendor(vendor);
-                              setEditDrawerOpen(true);
-                            }}
-                          >
-                            <MdEditDocument className="mr-2 text-blue-600" />Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className=" hover:text-red-600 text-indigo-600"
-                            onClick={() => handleDelete(vendor.VendorId)}
-                          >
-                            <FaTrash className="mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                  <div className="col-span-2 flex justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0"
+                        >
+                          <FaEllipsisV className="h-4 w-4 text-gray-600" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-32">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditVendor(vendor);
+                            setEditDrawerOpen(true);
+                          }}
+                        >
+                          <MdEditDocument className="mr-2 text-blue-600" />Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className=" hover:text-red-600 text-indigo-600"
+                          onClick={() => handleDelete(vendor.VendorId)}
+                        >
+                          <FaTrash className="mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
                 </div>
 
@@ -235,11 +234,10 @@ export default function ProVendors() {
 
                             {/* Col 4: Type (Primary/Secondary) */}
                             <span
-                              className={`col-span-1 text-xs text-center px-3 py-2 rounded-full ${
-                                bank.IsPrimary
+                              className={`col-span-1 text-xs text-center px-3 py-2 rounded-full ${bank.IsPrimary
                                   ? "bg-indigo-100 text-indigo-700"
                                   : "bg-gray-700 text-gray-100"
-                              }`}
+                                }`}
                             >
                               {bank.IsPrimary ? "Primary" : "Secondary"}
                             </span>
@@ -284,4 +282,4 @@ export default function ProVendors() {
       />
     </div>
   );
-}2
+} 2

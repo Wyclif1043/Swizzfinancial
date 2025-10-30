@@ -18,8 +18,9 @@ export default function AddInsuranceDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await Base_Url.post("/employee-insurance-companies",formData);
+      const res = await Base_Url.post("/employee-insurance-companies", formData);
       if (res.status !== 200) throw new Error("Failed to add company");
+
       Swal.fire("Success", "Insurance company added successfully!", "success");
 
       setFormData({ Name: "", Address: "" });

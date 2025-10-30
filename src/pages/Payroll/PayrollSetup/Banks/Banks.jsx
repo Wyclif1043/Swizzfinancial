@@ -32,9 +32,10 @@ export default function Banks() {
       const response = await Base_Url.get("/employee-banks")
       setBanks(response.data?.data || [])
     } catch (error) {
-      console.error("Error Fetching Banks",Error)
+      console.error("Error Fetching Banks", Error)
       throw error
-    } finally{setLoading(false)}
+    } finally { setLoading(false) }
+
   };
   useEffect(() => {
     fetchBanks();
@@ -54,6 +55,7 @@ export default function Banks() {
       if (result.isConfirmed) {
         try {
           const res = await Base_Url.delete(`/employee-banks/${code}`);
+
           if (!res.ok) throw new Error("Failed to delete bank");
           Swal.fire("Deleted!", "Bank has been deleted.", "success");
           fetchBanks();

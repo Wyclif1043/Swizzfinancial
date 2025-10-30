@@ -25,15 +25,16 @@ export default function InsuranceCompanies() {
     setLoading(true);
     try {
       const res = await Base_Url.get("/employee-insurance-companies")
-      if(res.status === 200){
+      if (res.status === 200) {
         setCompanies(res.data?.data || [])
       }
     } catch (error) {
-      console.log("Error Fetching insuarance companies",error)
+      console.log("Error Fetching insuarance companies", error)
     }
-    finally{
+    finally {
       setLoading(false)
     }
+
   };
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function InsuranceCompanies() {
         try {
           const res = await Base_Url.delete(`/employee-insurance-companies/${code}`);
           if (res.status !== 200) throw new Error("Failed to delete");
+
           Swal.fire("Deleted!", "Insurance company has been deleted.", "success");
           fetchCompanies();
         } catch (err) {

@@ -8,7 +8,6 @@ import Invitem from "./pages/Inventory/Items/Invitem";
 import InvJournal from "./pages/Inventory/Journals/InvJournal";
 import InvTransactions from "./pages/Inventory/Transcations/InvTransactions";
 import ChartOfAccounts from "./pages/Finance/COA/ChartsOfAccount";
-import PostingJournal from "./pages/Finance/POST/postingJournal";
 
 
 //import Home from "./pages/Home";
@@ -25,7 +24,7 @@ import Employees from "./pages/Payroll/Employees";
 import Departments from "./pages/Payroll/Departments";
 import Procument from "./pages/Procurement/Procument";
 import Finance from "./pages/Finance/Finance";
-import GeneralLedger from "./pages/Finance/GeneralLedger";
+//import GeneralLedger from "./pages/Finance/GeneralLedger";
 
 // Account setup page
 import AccountsSetup from "./pages/Payroll/Accounts/AccountsSetup.jsx";
@@ -42,12 +41,29 @@ import ProRequisitions from "./pages/Procurement/Requisitions/ProRequisitions.js
 import PurchaseOrder from "./pages/Procurement/PurchaseOrder/PurchaseOrder.jsx";
 import BankLinkages from "./pages/Finance/Setup/Bank/BankLinkages.jsx";
 import AccountConfiguration from "./pages/Finance/Setup/AccountConfiguration/AccountConfiguration.jsx";
-import PurchaseInvoices from "./pages/Finance/PurchaseInvoice/PurchaseInvoices.jsx";
-import PurchaseCreditMemo from "./pages/Finance/PurchaseCreditMemo/PurchaseCreditMemo.jsx";
+
+//import PurchaseInvoices from "./pages/Finance/PurchaseInvoice/PurchaseInvoices.jsx";
+//import PurchaseCreditMemo from "./pages/Finance/PurchaseCreditMemo/PurchaseCreditMemo.jsx";
 import PayrollSetup from "./pages/Payroll/PayrollSetup/PayrollSetup.jsx";
 import StatutorySetup from "./pages/Payroll/Statutory setup/StatutorySetup.jsx";
-import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
 import EmployeeSetup from "./pages/Payroll/EmployeeSetup/EmployeeSetup.jsx";
+
+
+
+import StoreRequisitions from "./pages/Procurement/StoreRequisitions/StoreRequisitions.jsx";
+import SalesCreditMemo from "./pages/Finance/AccountsReceivable/SalesCreditMemo/SalesCreditMemo.jsx";
+import Setup from "./pages/Finance/Setup/Setup.jsx";
+import AccountPayable from "./pages/Finance/AccountPayable/AccountPayable.jsx";
+import AccountsReceivable from "./pages/Finance/AccountsReceivable/AccountsReceivable.jsx";
+import PaymentVoucher from "./pages/Finance/PaymentVoucher/PaymentVoucher.jsx";
+import RequestForQuotation from "./pages/Procurement/RFQ/RequestForQuotation.jsx";
+import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/ProjectsWithBudgets.jsx";
+import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
+import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
+import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
+import PostingJournal from "./pages/Finance/postjournal/PostingJournal.jsx";
+import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
+
 
 
 export default function App() {
@@ -60,40 +76,49 @@ export default function App() {
         {/* All other routes WITH Layout */}
         <Route path="/" element={<Layout />}>
 
+
           {/* Payroll */}
           <Route path="Payroll" element={<Payroll />} />
-          <Route path="Payroll/payrollsetup" element={<PayrollSetup/>} />
-          <Route path="Payroll/statutorysetup" element={<StatutorySetup/>} />
-          <Route path="Payroll/Employees" element={<EmployeeSetup/>} />
-          <Route path="department" element={<Departments/>} />
+          <Route path="Payroll/payrollsetup" element={<PayrollSetup />} />
+          <Route path="Payroll/statutorysetup" element={<StatutorySetup />} />
+          <Route path="Payroll/Employees" element={<EmployeeSetup />} />
+          <Route path="department" element={<Departments />} />
           <Route path="leave" element={<Leaves />} />
 
           {/* FixedAssets */}
           <Route path="/FixedAssets" element={<FixedAssetsSetup />} />
-          <Route path="/FixedAssets/Category" element={<FixCategory/>} />
-          <Route path="/FixedAssets/Location" element={<Location/>} />
-          <Route path="FixedAssets/FixedAssetCard" element={<FixedAssetsSetup/>} />
+          <Route path="/FixedAssets/Category" element={<FixCategory />} />
+          <Route path="/FixedAssets/Location" element={<Location />} />
+          <Route path="FixedAssets/FixedAssetCard" element={<FixedAssetsSetup />} />
 
           {/* Procurement */}
-          <Route path="/Procurement" element={<Procument/>} />
-          <Route path="/Procurement/Vendors" element={<ProVendors/>} />
-          <Route path="/Procurement/requisitions" element={<ProRequisitions/>} />
-          <Route path="Procurement/StoreRequisitions" element={<StoreRequisitions/>} />
-          <Route path="/Procurement/PurchaseOrder" element={<PurchaseOrder/>} />
+          <Route path="/Procurement" element={<Procument />} />
+          <Route path="/Procurement/Vendors" element={<ProVendors />} />
+          <Route path="/Procurement/requisitions" element={<ProRequisitions />} />
+          <Route path="Procurement/StoreRequisitions" element={<StoreRequisitions />} />
+          <Route path="/Procurement/PurchaseOrder" element={<PurchaseOrder />} />
+          <Route path="/Procurement/SubmitQuotation" element={<QuotationSubmission />} />
+          <Route path="/Procurement/Quotation" element={<Quotations />} />
+          <Route path="/Procurement/RFQ" element={<RequestForQuotation />} />
+          <Route path="/Procurement/ProjectsWithBudgets" element={<ProjectsWithBudgets />} />
+          <Route path="/Procurement/Biding" element={<BidAnalysis />} />
 
           {/* Finance */}
-          <Route path="Finance" element={<Finance/>} />
-          <Route path="Finance/ChartsOfAccount" element={<ChartOfAccounts/>} />
-          <Route path="Finance/PostingJournal" element={<PostingJournal/>} />
-          <Route path="Finance/BanksSetup" element={<BankLinkages/>} />
-          <Route path="Finance/AccountConfiguration" element={<AccountConfiguration/>} />
-          <Route path="Finance/PurchaseInvoices" element={<PurchaseInvoices/>} />
-          <Route path="Finance/PurchaseCreditMemo" element={<PurchaseCreditMemo/>} />
-          <Route path="Finance/GeneralLedger" element={<GeneralLedger/>} />
+          <Route path="Finance" element={<Finance />} />
+          <Route path="Finance/ChartsOfAccount" element={<ChartOfAccounts />} />
+          <Route path="Finance/PostingJournal" element={<PostingJournal />} />
+          <Route path="Finance/BanksSetup" element={<BankLinkages />} />
+          <Route path="Finance/AccountConfiguration" element={<AccountConfiguration />} />
+          <Route path="Finance/salesInvoice" element={<SalesInvoice />} />
+          <Route path="Finance/salesCreditMemo" element={<SalesCreditMemo />} />
+          <Route path="Finance/Setup" element={<Setup />} />
+          <Route path="Finance/PaymentVoucher" element={<PaymentVoucher />} />
+          {/* <Route path="Finance/GeneralLedger" element={<GeneralLedger />} /> */}
           <Route path="GeneralLedger/reports" element={<h1>GL Reports</h1>} />
-          <Route path="GeneralLedger/settings" element={<h1>GL Settings</h1>} />
+          {/* <Route path="GeneralLedger/settings" element={<h1>GL Settings</h1>} /> */}
 
-          <Route path="AccountsPayable" element={<h1>Accounts Payable</h1>} />
+          <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
+          <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} />
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
 
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />
@@ -103,17 +128,17 @@ export default function App() {
           <Route path="FinancialReporting" element={<h1>Financial Reporting</h1>} />
 
           {/* Payroll Account Setup */}
-          <Route path="/Payroll/Accounts" element={<AccountsSetup/>}/>
+          <Route path="/Payroll/Accounts" element={<AccountsSetup />} />
 
           {/* Inventory */}
           <Route path="Inventory" element={<h1>Inventory</h1>} />
-          <Route path="Inventory/Inventory" element={<InventoryDashboard/>} />
-          <Route path="Inventory/invcategories" element={<Invcategory/>} />
-          <Route path="Inventory/Invlocations" element={<InvLocation/>} />
-          <Route path="Inventory/invUnitOfMeasure" element={<InvUom/>} />
-          <Route path="Inventory/InvItems" element={<Invitem/>} />
-          <Route path="Inventory/InvJournals" element={<InvJournal/>} />
-          <Route path="Inventory/InvTransactions" element={<InvTransactions/>} />
+          <Route path="Inventory/Inventory" element={<InventoryDashboard />} />
+          <Route path="Inventory/invcategories" element={<Invcategory />} />
+          <Route path="Inventory/Invlocations" element={<InvLocation />} />
+          <Route path="Inventory/invUnitOfMeasure" element={<InvUom />} />
+          <Route path="Inventory/InvItems" element={<Invitem />} />
+          <Route path="Inventory/InvJournals" element={<InvJournal />} />
+          <Route path="Inventory/InvTransactions" element={<InvTransactions />} />
           <Route path="Inventory/StockReceipts" element={<h1>Stock Receipts</h1>} />
           <Route path="Inventory/StockIssues" element={<h1>Stock Issues</h1>} />
           <Route path="Inventory/TransfersbetweenWarehouses" element={<h1>Transfers between Warehouses</h1>} />

@@ -82,13 +82,13 @@ export default function AccountDrawer({ account, open, onClose }) {
             <div className="p-4 space-y-4 overflow-y-auto flex-1">
               {/* 🔹 Compact Account Overview Card */}
               {account && (
-                <Card className="rounded-2xl shadow-lg bg-black text-white p-4 space-y-6">
+                <Card className="rounded-2xl shadow-lg bg-indigo-600 text-white p-4 space-y-6">
                   {/* Card & Balance Section */}
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     {/* Fake Card Preview */}
                     <div className="bg-gradient-to-r from-gray-600 to-gray-800 rounded-2xl p-6 w-100 text-white shadow-inner ">
                       <div className="mb-6 flex justify-between">
-                        <div className="w-12 h-8 bg-gray-400 px-2 rounded-md flex items-center justify-center"> 
+                        <div className="w-12 h-8 bg-indigo-400 px-2 rounded-md flex items-center justify-center"> 
                         </div>
                         <div>Code {account.Code || "XXXX"}</div>
                       </div>
@@ -97,7 +97,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                         <p className="text-3xl font-bold">
                           {account.Balance.toLocaleString("en-US", {
                             style: "currency",
-                            currency: "USD",
+                            currency: "Ksh",
                           })}
                         </p>
                       </div>
@@ -108,7 +108,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                           <p className="font-semibold">
                             {totalDebit.toLocaleString("en-US", {
                               style: "currency",
-                              currency: "USD",
+                              currency: "Ksh",
                             })}
                           </p>
                         </div>
@@ -117,7 +117,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                           <p className="font-semibold">
                             {totalCredit.toLocaleString("en-US", {
                               style: "currency",
-                              currency: "USD",
+                              currency: "Ksh",
                             })}
                           </p>
                         </div>
@@ -132,7 +132,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                     {/* Available Amount */}
                     <div className="flex-1 space-y-6">
                       <div>
-                        <p className="text-gray-400 text-sm">Description</p>
+                        <p className="text-gray-100 text-sm">Description</p>
                         <p className="text-3xl font-bold">
                           {account.Description}
                         </p>
@@ -140,7 +140,7 @@ export default function AccountDrawer({ account, open, onClose }) {
 
                       <div className="flex justify-between text-sm">
                         <div>
-                          <p className="text-gray-400">Category</p>
+                          <p className="text-gray-100">Category</p>
                           <p className="font-semibold">
                             {account.CategoryDescription}
                           </p>

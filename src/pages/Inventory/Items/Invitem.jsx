@@ -83,25 +83,25 @@ export default function Invitem() {
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
         <div className="grid grid-cols-8 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
-          <span>Item ID</span>
-          <span>Item No</span>
-          <span>Description</span>
-          <span>Inventory Balance</span>
-          <span className="text-right">Actions</span>
+          <span className="col-span-1">Item ID</span>
+          <span className="col-span-1">Item No</span>
+          <span className="col-span-1">Description</span>
+          <span className="col-span-2">Inventory Balance</span>
+          <span className="col-span-2 text-right">Actions</span>
         </div>
 
         {loading ? (
-        <div className="space-y-2 animate-pulse">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-5 gap-4 bg-gray-50 p-6 rounded">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded text-right"></div>
-            </div>
-          ))}
-        </div>
+          <div className="space-y-2 animate-pulse">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-5 gap-4 bg-gray-50 p-6 rounded">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded text-right"></div>
+              </div>
+            ))}
+          </div>
         ) : items.length > 0 ? (
           <div className="space-y-2">
             {items.map((item) => (
@@ -124,7 +124,7 @@ export default function Invitem() {
                       setStockDrawerOpen(true);
                     }}
                   >
-                   Item Journal
+                    Item Journal
                   </Button>
 
                   <div className="flex justify-end gap-2 col-span-2">
@@ -185,7 +185,7 @@ export default function Invitem() {
             ))}
           </div>
         ) : (
-           <div className="text-gray-500 text-center mt-4">
+          <div className="text-gray-500 text-center mt-4">
             <img src={NotFoundImage} alt="Not Found" className="mx-auto w-42 h-auto" />
             <p className="font-medium text-gray-400">No items found.</p>
           </div>
@@ -207,10 +207,10 @@ export default function Invitem() {
         item={editItem}
       />
       <StockJournalDrawer
-  open={stockDrawerOpen}
-  onClose={() => setStockDrawerOpen(false)}
-  item={selectedItem}
-/>
+        open={stockDrawerOpen}
+        onClose={() => setStockDrawerOpen(false)}
+        item={selectedItem}
+      />
 
     </div>
   );

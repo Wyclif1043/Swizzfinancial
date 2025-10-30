@@ -29,7 +29,7 @@ export default function PurchaseCreditMemo() {
   const [selectedMemo, setSelectedMemo] = useState(null);
 
   const fetchCreditMemos = () => {
-    fetch("https://0e05b3ea37cd.ngrok-free.app/api/values/GetPurchaseCreditMemos", {
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseCreditMemos`, {
       headers: { "ngrok-skip-browser-warning": "true" },
     })
       .then((res) => res.json())
@@ -69,7 +69,7 @@ export default function PurchaseCreditMemo() {
 
     try {
       const response = await fetch(
-        `https://0e05b3ea37cd.ngrok-free.app/api/values/PostPurchaseCreditMemo/${memoId}`,
+        `${import.meta.env.VITE_APP_FIN_URL}/api/values/PostPurchaseCreditMemo/${memoId}`,
         { method: "POST", headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" } }
       );
 
@@ -87,7 +87,7 @@ export default function PurchaseCreditMemo() {
   };
 
   return (
-    <div className="bg-white m-8 px-8 py-8 shadow-2xl rounded-lg relative">
+    <div className="bg-white px-4 py-8 rounded-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -103,13 +103,13 @@ export default function PurchaseCreditMemo() {
 
       {/* Table Header */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-13 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span className="col-span-1">No</span>
           <span className="col-span-2">Vendor</span>
           <span className="col-span-2">Address</span>
           <span className="col-span-2">Document Date</span>
           <span className="col-span-2">Due Date</span>
-          <span className="col-span-1">Status</span>
+          <span className="col-span-2">Status</span>
           <span className="col-span-2 text-right">Actions</span>
         </div>
 
@@ -127,14 +127,14 @@ export default function PurchaseCreditMemo() {
           <div className="space-y-2">
             {creditMemos.map((memo,index) => (
               <div key={index} className="bg-white rounded-lg shadow-lg border">
-                <div className="grid grid-cols-12 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                <div className="grid grid-cols-13 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                   <span className="font-medium text-indigo-700 col-span-1">{memo.No || index + 1}</span>
-                  <span className="col-span-2">{memo.VendorName || `Vendor ${memo.VendorNo}`}</span>
-                  <span className="col-span-2">{memo.VendorAddress}</span>
+                  <span className="col-span-2 truncate">{memo.VendorName || `Vendor ${memo.VendorNo}`}</span>
+                  <span className="col-span-2 truncate">{memo.VendorAddress}</span>
                   <span className="col-span-2">{new Date(memo.DocumentDate).toLocaleDateString()}</span>
                   <span className="col-span-2">{new Date(memo.DueDate).toLocaleDateString()}</span>
                   <span
-                    className={`text-sm rounded-2xl text-center flex items-center justify-center px-3 py-1 col-span-1 ${
+                    className={`text-sm rounded-2xl text-center flex items-center justify-center px-3 py-1 col-span-2 mr-4 ${
                       memo.ApprovalStatus === "Approved" ? "bg-green-600 text-white" : "bg-red-600 text-white"
                     }`}
                   >
