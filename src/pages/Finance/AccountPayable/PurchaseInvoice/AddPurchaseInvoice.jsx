@@ -26,6 +26,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
     PostingDate: new Date().toISOString().split("T")[0],
     DueDate: new Date().toISOString().split("T")[0],
     ApprovalStatus: "",
+    TotalAmount: "",
     PurchaseInvoiceLines: [
       {
         type: "",
@@ -33,7 +34,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
         Description: "",
         quantity: "",
         unitCost: "",
-        totalAmount: "",
+        Amount: "",
       },
     ],
   });
@@ -45,18 +46,35 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
   const [purchaseInvoiceTypes, setPurchaseInvoiceTypes] = useState([]);
   const [chartOfAccounts, setChartOfAccounts] = useState([]);
 
+
   const handleLineChange = (index, field, value) => {
     const updatedLines = [...formData.PurchaseInvoiceLines];
-    updatedLines[index][field] =
-      field === "quantity" || field === "unitCost" || field === "totalAmount"
-        ? parseFloat(value) || 0
-        : value;
+    const line = { ...updatedLines[index], [field]: value };
 
-    setFormData({
-      ...formData,
+    // Convert safely to numbers
+    const quantity = parseFloat(line.quantity) || 0;
+    const unitCost = parseFloat(line.unitCost) || 0;
+
+    // ✅ Auto-calculate and store in Amount (the correct field)
+    line.Amount = quantity * unitCost;
+
+    updatedLines[index] = line;
+
+    // ✅ Recalculate overall invoice total
+    const totalInvoiceAmount = updatedLines.reduce(
+      (sum, l) => sum + (parseFloat(l.Amount) || 0),
+      0
+    );
+
+    setFormData((prev) => ({
+      ...prev,
       PurchaseInvoiceLines: updatedLines,
-    });
+      TotalAmount: parseFloat(totalInvoiceAmount.toFixed(2)),
+    }));
   };
+
+
+
 
 
   const addLine = () => {
@@ -70,7 +88,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
           Description: "",
           quantity: "",
           unitCost: "",
-          totalAmount: "",
+          Amount: "",
         },
       ],
     });
@@ -78,16 +96,32 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
   };
 
   const removeLine = (index) => {
-    const updatedLines = formData.PurchaseInvoiceLines.filter(
-      (_, i) => i !== index
+    const updatedLines = formData.PurchaseInvoiceLines.filter((_, i) => i !== index);
+
+    const totalInvoiceAmount = updatedLines.reduce(
+      (sum, l) => sum + (parseFloat(l.Amount) || 0),
+      0
     );
-    setFormData({ ...formData, PurchaseInvoiceLines: updatedLines });
+
+    setFormData({
+      ...formData,
+      PurchaseInvoiceLines: updatedLines,
+      TotalAmount: parseFloat(totalInvoiceAmount.toFixed(2)),
+    });
+
     setExpandedIndex(null);
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    const payload = {
+      ...formData,
+      TotalAmount: parseFloat(formData.TotalAmount) || 0,
+    };
+
 
     try {
       const res = await fetch(
@@ -98,7 +132,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -125,7 +159,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
             Description: "",
             quantity: "",
             unitCost: "",
-            totalAmount: "",
+            Amount: "",
             //debitChartOfAccountId: ""
           },
         ],
@@ -149,32 +183,32 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
 
   useEffect(() => {
     // Fetch Purchase Invoice Types
-    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseInvoiceEntryTypes`,{
-       headers: { "ngrok-skip-browser-warning": "true" }
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetPurchaseInvoiceEntryTypes`, {
+      headers: { "ngrok-skip-browser-warning": "true" }
     })
-    .then((res) => res.json())
-    .then((data) => setPurchaseInvoiceTypes(data))
-    .catch((err) => console.error("Error fetching invoice types:", err));
+      .then((res) => res.json())
+      .then((data) => setPurchaseInvoiceTypes(data))
+      .catch((err) => console.error("Error fetching invoice types:", err));
 
 
     // Fetch Chart of Accounts
-   fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetChartOfAccount`, {
-  headers: { "ngrok-skip-browser-warning": "true" },
-})
-  .then((res) => res.json())
-  .then((data) => {
-    const accounts = Array.isArray(data) ? data : data.Data || [];
-    setChartOfAccounts(accounts);
-  })
-  .catch((err) => {
-    console.error("Error fetching chart of accounts:", err);
-    setChartOfAccounts([]);
-  });
+    fetch(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetChartOfAccount`, {
+      headers: { "ngrok-skip-browser-warning": "true" },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const accounts = Array.isArray(data) ? data : data.Data || [];
+        setChartOfAccounts(accounts);
+      })
+      .catch((err) => {
+        console.error("Error fetching chart of accounts:", err);
+        setChartOfAccounts([]);
+      });
 
 
   }, []);
 
-  
+
   //console.log(chartOfAccounts)
   //console.log(purchaseInvoiceTypes)
 
@@ -191,7 +225,7 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
             animate={{ opacity: 0.4 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-          />/
+          />
 
           {/* Drawer */}
           <motion.div
@@ -272,23 +306,23 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
                     />
                   </div>
                 </div>
-                
 
-                 <Select
-                    value={formData.ApprovalStatus}
-                    onValueChange={(value) =>
-                        setFormData({ ...formData, ApprovalStatus: value })
-                    }
-                    >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Approved">Approved</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
-                    </SelectContent>
-                    </Select>
+
+                <Select
+                  value={formData.ApprovalStatus}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, ApprovalStatus: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
 
 
                 <Button
@@ -299,6 +333,19 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
                   <IoIosArrowDropleftCircle /> Add Invoice Lines (
                   {formData.PurchaseInvoiceLines.length})
                 </Button>
+
+                <div className="flex justify-between items-center bg-gray-100 px-3 py-2 rounded">
+                  <span className="font-semibold text-gray-700">Total Invoice Amount:</span>
+                  <span className="font-bold text-indigo-700">
+                    {Number(formData.TotalAmount || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    /=
+                  </span>
+                </div>
+
+
 
                 <Button
                   type="submit"
@@ -383,40 +430,40 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden p-2 space-y-2"
                             >
-                              
+
                               <div>
                                 <Select
-                                    value={line.type || ""}
-                                    onValueChange={(val) => handleLineChange(idx, "type", val)}
-                                    >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {purchaseInvoiceTypes.map((t) => (
-                                        <SelectItem key={t.Value} value={t.Value}>
-                                            {t.Text}
-                                        </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                    </Select>
+                                  value={line.type || ""}
+                                  onValueChange={(val) => handleLineChange(idx, "type", val)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {purchaseInvoiceTypes.map((t) => (
+                                      <SelectItem key={t.Value} value={t.Value}>
+                                        {t.Text}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
 
-                                </div>
-                                <Select
+                              </div>
+                              <Select
                                 value={line.DebitChartOfAccountId || ""}
                                 onValueChange={(value) => handleLineChange(idx, "DebitChartOfAccountId", value)}
-                                >
+                              >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Account" />
+                                  <SelectValue placeholder="Select Account" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-100 overflow-y-auto">
-                                    {chartOfAccounts.map((acc, index) => (
+                                  {chartOfAccounts.map((acc, index) => (
                                     <SelectItem key={`${acc.Id}-${index}`} value={String(acc.Id)}>
-                                        {acc.AccountName}
+                                      {acc.AccountName}
                                     </SelectItem>
-                                    ))}
+                                  ))}
                                 </SelectContent>
-                                </Select>
+                              </Select>
 
 
                               <Input
@@ -457,7 +504,8 @@ export default function AddPurchaseInvoiceDrawer({ open, onClose, onSuccess }) {
                               <Input
                                 type="number"
                                 placeholder="Total Amount"
-                                value={line.totalAmount}
+                                readOnly
+                                value={line.Amount}
                                 onChange={(e) =>
                                   handleLineChange(
                                     idx,
