@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateSalaryCycle } from "../../../../../apis/employeesapi/SalaryCycleApis";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function EditSalaryCycle({ open, onClose, onSuccess, cycle }) {
@@ -20,7 +20,7 @@ export default function EditSalaryCycle({ open, onClose, onSuccess, cycle }) {
     "July","August","September","October","November","December",
   ];
 
-  // 🔹 Populate fields from selected cycle
+  //  Populate fields from selected cycle
   useEffect(() => {
     if (cycle) {
       const start = new Date(cycle.startDate);
@@ -56,7 +56,7 @@ export default function EditSalaryCycle({ open, onClose, onSuccess, cycle }) {
     };
 
     try {
-      await updateSalaryCycle(payload.id, payload); // <-- call API
+      await payrollsetupApiConfig.put(`/salary-cycles/${payload.id}`, payload);
       Swal.fire("Success", "Salary Cycle updated successfully!", "success");
       onSuccess?.();
       onClose();

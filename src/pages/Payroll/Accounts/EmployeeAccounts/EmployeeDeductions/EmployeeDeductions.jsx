@@ -9,10 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaMinusCircle, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import {
-  getDeductions,
-  deleteDeductions,
-} from "../../../../../apis/employeesapi/EmployeeDeductionsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddEmployeeDeductions from "./AddEmployeeDeductions";
@@ -37,7 +34,7 @@ export default function EmployeeDeductions() {
   const fetchDeductions = async () => {
     try {
       setLoading(true);
-      const res = await getDeductions();
+      const res = await payrollsetupApiConfig.get("/employee-deductions");
       setDeductions(res.data?.data || []); 
     } catch (error) {
       console.error("Error fetching deductions:", error);
@@ -63,7 +60,7 @@ export default function EmployeeDeductions() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteDeductions(id);
+          const res = await payrollsetupApiConfig.delete(`/employee-deductions/${id}`);
           if (res.status !== 200) throw new Error("Failed to delete deduction");
           Swal.fire("Deleted!", "Deduction has been deleted.", "success");
           fetchDeductions();

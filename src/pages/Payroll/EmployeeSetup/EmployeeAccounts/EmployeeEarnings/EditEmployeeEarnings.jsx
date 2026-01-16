@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
-import { updateEarning } from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig"; 
 
 export default function EditEmployeeEarnings({ open, onClose, onSuccess, earning }) {
   const [formData, setFormData] = useState({
@@ -17,7 +17,6 @@ export default function EditEmployeeEarnings({ open, onClose, onSuccess, earning
   });
   const [loading, setLoading] = useState(false);
 
-  // Pre-fill with current values (handle PascalCase or camelCase from backend)
   useEffect(() => {
     if (!earning) return;
 
@@ -39,7 +38,6 @@ export default function EditEmployeeEarnings({ open, onClose, onSuccess, earning
     setLoading(true);
 
     try {
-      // Build payload matching API spec (lowercase keys as your example PUT showed)
       const payload = {
         id: Number(formData.id),
         employeeNumber: Number(formData.employeeNumber),
@@ -51,7 +49,7 @@ export default function EditEmployeeEarnings({ open, onClose, onSuccess, earning
 
       console.debug("EDIT PAYLOAD", payload);
 
-      const res = await updateEarning(payload.id, payload);
+      const res = await payrollsetupApiConfig.put(`/employee-earnings/${payload.id}`, payload);
 
       // Accept 200 or 204 just in case
       if (![200, 201, 204].includes(res.status)) {

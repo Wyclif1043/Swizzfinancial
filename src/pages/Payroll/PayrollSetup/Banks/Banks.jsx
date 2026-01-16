@@ -29,13 +29,12 @@ export default function Banks() {
   const fetchBanks = async () => {
     setLoading(true);
     try {
-      const response = await Base_Url.get("/employee-banks")
+      const response = await payrollsetupApiConfig.get("/employee-banks");
       setBanks(response.data?.data || [])
     } catch (error) {
       console.error("Error Fetching Banks", Error)
       throw error
     } finally { setLoading(false) }
-
   };
   useEffect(() => {
     fetchBanks();
@@ -55,9 +54,12 @@ export default function Banks() {
       if (result.isConfirmed) {
         try {
           const res = await Base_Url.delete(`/employee-banks/${code}`);
+          if (res.data.success) {
+            Swal.fire("Deleted!", res.data.message, "success");
+          } else {
+            Swal.fire("Error", res.data.message, "error");
+          }
 
-          if (!res.ok) throw new Error("Failed to delete bank");
-          Swal.fire("Deleted!", "Bank has been deleted.", "success");
           fetchBanks();
         } catch (err) {
           Swal.fire("Error!", "Failed to delete bank.", "error");

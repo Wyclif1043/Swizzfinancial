@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createDeduction } from "../../../../../apis/employeesapi/EmployeeDeductionsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
@@ -15,6 +15,8 @@ export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
     amount: "",
   });
   const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [deductionCodes, setDeductionCodes] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +32,8 @@ export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
         amount: Number(formData.amount),
       };
 
-      const res = await createDeduction(payload);
+      const res = await payrollsetupApiConfig.post("/employee-deductions", payload);
+
       if (![200, 201].includes(res.status)) {
         throw new Error("Failed to add Deduction");
       }
@@ -55,6 +58,38 @@ export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
       setLoading(false);
     }
   };
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch("https://186c1c091b40.ngrok-free.app/api/employee-profiles", {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const json = await res.json();
+      setEmployees(json.data || []);
+    } catch (error) {
+      console.error("Failed to load employees", error);
+    }
+  };
+
+  const fetchDeductionsCode = async () => {
+    try {
+      const res = await fetch("https://186c1c091b40.ngrok-free.app/api/account-details/allowable-deductions", {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const json = await res.json();
+      setDeductionCodes(json.data || []);
+    } catch (error) {
+      console.error("Failed to load earning codes", error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchEmployees();
+      fetchDeductionsCode();
+    }
+  }, [open]);
+
 
   return (
     <AnimatePresence>
@@ -87,29 +122,46 @@ export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Employee Number</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter Employee Number"
+                  <Label>Employee</Label>
+                  <select
+                    className="w-full border rounded-md p-2"
                     value={formData.employeeNumber}
                     onChange={(e) =>
                       setFormData({ ...formData, employeeNumber: e.target.value })
                     }
                     required
-                  />
+                  >
+                    <option value="">-- Select Employee --</option>
+
+                    {employees.map((emp) => (
+                      <option key={emp.EmployeeNumber} value={emp.EmployeeNumber}>
+                        {emp.Name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+
                 <div>
                   <Label>Deduction Code</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter Deduction Code"
+                  <select
+                    className="w-full border rounded-md p-2"
                     value={formData.deductionCode}
                     onChange={(e) =>
                       setFormData({ ...formData, deductionCode: e.target.value })
                     }
                     required
-                  />
+                  >
+                    <option value="">-- Select Deduction --</option>
+
+                    {deductionCodes.map((item) => (
+                      <option key={item.Code} value={item.Code}>
+                        {item.Name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
                   <Label>Start Date</Label>
                   <Input

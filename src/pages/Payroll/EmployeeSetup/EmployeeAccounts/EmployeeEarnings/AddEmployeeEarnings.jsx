@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createEarning } from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
@@ -21,7 +21,7 @@ export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await createEarning(formData);
+      const res = await payrollsetupApiConfig.post("/employee-earnings", formData);
       if (res.status !== 201 && res.status !== 200)
         throw new Error("Failed to add Earning");
 

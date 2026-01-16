@@ -11,6 +11,10 @@ import {
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "../../../assets/adra.png";
+
 export default function Pending() {
   const [requisitions, setRequisitions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,17 +82,128 @@ export default function Pending() {
     }
   };
 
+
+
+
+
+  const downloadPDF = (req) => {
+    const doc = new jsPDF("p", "pt", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const green = [0, 77, 64]; // ADRA Green
+
+    // -------------------------
+    // HEADER (Logo + Banner)
+    // -------------------------
+    doc.addImage(logo, "PNG", 40, 30, 40, 40);
+    doc.setFillColor(...green);
+    doc.rect(40, 90, pageWidth - 80, 50, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text("STORE REQUISITION", pageWidth / 2, 122, { align: "center" });
+
+    // -------------------------
+    // TO / FROM Section
+    // -------------------------
+    const leftX = 40;
+    const rightX = pageWidth / 2 + 20;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...green);
+
+    doc.text("Requested By:", leftX, 170);
+    doc.text("Department:", rightX, 170);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+
+    doc.text(req.RequesterName || "-", leftX, 190);
+    doc.text(req.DepartmentName || "-", rightX, 190);
+
+    doc.text(`Status: ${req.Status}`, leftX, 210);
+    doc.text(`Requisition No: ${req.RequisitionNumber}`, rightX, 210);
+
+    // -------------------------
+    // TABLE OF ITEMS
+    // -------------------------
+    const tableData = req.Lines.map((line) => [
+      line.ItemDescription,
+      line.QuantityRequested,
+      line.UnitOfMeasure || "Unit",
+      `Ksh ${line.UnitPrice.toFixed(2)}`,
+      line.Remarks || "-",
+      `Ksh ${(line.QuantityRequested * line.UnitPrice).toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: 240,
+      head: [["Description", "Qty", "Unit", "Unit Price", "Remarks", "Total (KES)"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: green, textColor: "#FFFFFF", fontStyle: "bold", halign: "center" },
+      styles: { fontSize: 11, cellPadding: 6 },
+      columnStyles: {
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "right" },
+        5: { halign: "right" },
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 20;
+
+    // -------------------------
+    // TOTAL AMOUNT
+    // -------------------------
+    const totalAmount = req.Lines?.reduce(
+      (sum, l) => sum + (l.QuantityRequested || 0) * (l.UnitPrice || 0),
+      0
+    );
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(`Total Amount: Ksh ${totalAmount.toLocaleString()}`, 40, finalY);
+
+    // -------------------------
+    // THANK YOU / FOOTER
+    // -------------------------
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...green);
+    doc.text("Thank you for your collaboration.", pageWidth / 2, finalY + 40, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      "This document is confidential and intended solely for the recipient. Unauthorized sharing or duplication is prohibited.",
+      pageWidth / 2,
+      finalY + 60,
+      { align: "center", maxWidth: pageWidth - 80 }
+    );
+
+    doc.save(`PendingReq_${req.RequisitionNumber}.pdf`);
+  };
+
+
+
+
+
   return (
     <div className="bg-white py-8 rounded-lg">
       {/* Table Header */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-7 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
-          <span>Number</span>
-          <span>Requester</span>
-          <span>Department</span>
-          <span>Status</span>
-          <span>Total</span>
-          <span className="text-right col-span-2">Actions</span>
+        <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+          <span className="col-span-1">Number</span>
+          <span className="col-span-2">Requester</span>
+          <span className="col-span-2">Department</span>
+          <span className="col-span-2">Status</span>
+          <span className="col-span-2">Total</span>
+          <span className="col-span-1">Actions</span>
         </div>
 
         {/* Loading State */}
@@ -120,22 +235,31 @@ export default function Pending() {
                   className="bg-white rounded-lg shadow-lg border relative"
                 >
                   {/* Row */}
-                  <div className="grid grid-cols-9 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
-                    <span className="font-medium text-indigo-700 col-span-2 truncate">
+                  <div className="grid grid-cols-12 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                    <span className="font-medium text-indigo-700 col-span-1 truncate">
                       {req.RequisitionNumber}
                     </span>
-                    <span className="flex items-center gap-2 col-span-1">
-                      <FaUser className="text-gray-500" /> {req.RequesterName}
+                    <span className="flex items-center col-span-2">
+                      {req.RequesterName}
                     </span>
-                    <span className="flex items-center gap-2 col-span-1">
-                      <FaBuilding className="text-gray-500" /> {req.DepartmentName}
+                    <span className="flex items-center col-span-2">
+                      {req.DepartmentName}
                     </span>
                     <span className="col-span-2 text-sm w-40 rounded-2xl text-center flex items-center justify-center p-1 bg-yellow-500 text-white">
                       {req.Status}
                     </span>
-                    <span className="font-semibold">Ksh {totalAmount.toFixed(2)}</span>
+                    <span className="font-semibold col-span-1">Ksh {totalAmount.toFixed(2)}</span>
 
-                    <div className="flex gap-2 justify-end col-span-2 relative">
+                    <div className="flex gap-2  col-span-3">
+                      {/* PDF Download */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-gray-600 text-white hover:bg-gray-700"
+                        onClick={() => downloadPDF(req)}
+                      >
+                        Download PDF
+                      </Button>
                       {/* Action Dropdown */}
                       <div className="relative">
                         <Button

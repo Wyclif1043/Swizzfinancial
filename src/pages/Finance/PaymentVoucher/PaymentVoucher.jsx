@@ -1,6 +1,3 @@
-
-
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import AddPaymentVoucherDrawer from "./AddPaymentVoucherDrawer"; // import the drawer
@@ -84,7 +81,7 @@ export default function PaymentVoucher() {
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <FaMoneyCheckAlt /> Payment Vouchers
         </h2>
-         <Button
+        <Button
           onClick={() => setAddDrawerOpen(true)}
           className="bg-indigo-500 hover:bg-indigo-600 flex items-center gap-2"
         >
@@ -102,6 +99,7 @@ export default function PaymentVoucher() {
           <span className="col-span-2">Reference</span>
           <span className="col-span-2 text-right">Actions</span>
         </div>
+
 
         {/* Loader */}
         {loading ? (
@@ -134,11 +132,10 @@ export default function PaymentVoucher() {
                     {payment.Amount}
                   </span>
                   <span
-                    className={`text-sm col-span-2 px-2 py-1 rounded-full text-center ${
-                      payment.Posted
-                        ? "bg-green-600 text-white"
-                        : "bg-red-600 text-white"
-                    }`}
+                    className={`text-sm col-span-2 px-2 py-1 rounded-full text-center ${payment.Posted
+                      ? "bg-green-600 text-white"
+                      : "bg-red-600 text-white"
+                      }`}
                   >
                     {payment.Posted ? "Posted" : "Pending"}
                   </span>
@@ -146,25 +143,25 @@ export default function PaymentVoucher() {
 
                   <span>
                     <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-gray-700 hover:bg-gray-600 hover:text-white text-white"
-                    onClick={() =>
-                      setExpandedPayment(
-                        expandedPayment === payment.Id ? null : payment.Id
-                      )
-                    }
-                  >
-                    {expandedPayment === payment.Id ? (
-                      <>
-                        <FaChevronUp /> Hide Payment Lines
-                      </>
-                    ) : (
-                      <>
-                        <FaChevronDown /> View Payment Lines
-                      </>
-                    )}
-                  </Button>
+                      size="sm"
+                      variant="outline"
+                      className="bg-gray-700 hover:bg-gray-600 hover:text-white text-white"
+                      onClick={() =>
+                        setExpandedPayment(
+                          expandedPayment === payment.Id ? null : payment.Id
+                        )
+                      }
+                    >
+                      {expandedPayment === payment.Id ? (
+                        <>
+                          <FaChevronUp /> Hide Payment Lines
+                        </>
+                      ) : (
+                        <>
+                          <FaChevronDown /> View Payment Lines
+                        </>
+                      )}
+                    </Button>
                   </span>
 
                   {/* Actions */}
@@ -189,13 +186,13 @@ export default function PaymentVoucher() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </span>
-                  
+
 
                 </div>
 
                 {/* Expanded Payment Lines */}
                 <div className="border-t bg-gray-100 px-6 py-2">
-                  
+
                 </div>
 
                 {expandedPayment === payment.Id && payment.PaymentLines && (

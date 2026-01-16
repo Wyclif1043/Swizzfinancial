@@ -11,6 +11,7 @@ import { MdInventory2 } from "react-icons/md";
 import { MdBusinessCenter } from "react-icons/md";
 import bgcircle from "../assets/circle.jpg";
 import { Outlet } from "react-router-dom";
+import { FaWallet } from "react-icons/fa";
 
 
 
@@ -101,6 +102,17 @@ const mockWorkspaces = [
         sublinks: []
       },
 
+      {
+        id: "Procurement/Document",
+        name: "Document",
+        sublinks: []
+      },
+      // {
+      //   id: "Procurement/comparison",
+      //   name: "Vendor Comparison",
+      //   sublinks: []
+      // },
+
 
       /*{
         id: "maria",
@@ -124,6 +136,9 @@ const mockWorkspaces = [
       { id: "Finance/AccountsPayable", name: "Accounts Payable", sublinks: [] },
       { id: "Finance/AccountsReceivable", name: "Accounts Receivable", sublinks: [] },
       { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
+      { id: "Finance/MemberReceipting", name: "Receipt", sublinks: [] },
+      { id: "Finance/Creditbatches", name: "Creditbatches", sublinks: [] },
+
 
       //{ id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
       //{ id: "Finance/PurchaseCreditMemo", name: "Purchase Credit Memo", sublinks: [] },
@@ -173,6 +188,40 @@ const mockWorkspaces = [
       { id: "FixedAssets/Category", name: "Fixed Asset Class", sublinks: [] },
       { id: "FixedAssets/Location", name: "Location", sublinks: [] },
       { id: "FixedAssets/FixedAssetCard", name: "Fixed Asset Card", sublinks: [] },
+    ],
+  },
+  {
+    id: "ws6",
+    name: "Membership",
+    title: "Member..",
+    icon: <MdBusinessCenter className="text-2xl" />,
+    dms: [
+      { id: "Membership/companies", name: "Companies", sublinks: [] },
+      { id: "Membership/branches", name: "Branches", sublinks: [] },
+      { id: "Membership/Employers", name: "Employers", sublinks: [] },
+      //{ id: "Membership/Division", name: "Division", sublinks: [] },
+      //{ id: "Membership/Zones", name: "Zones", sublinks: [] },
+      //{ id: "Membership/Stations", name: "Stations", sublinks: [] },
+      //{ id: "Membership/Administrative", name: "Administrative", sublinks: [] },
+      { id: "Membership/Products", name: "Savings Products", sublinks: [] },
+      { id: "Membership/Members", name: "Members", sublinks: [] },
+      //{ id: "Membership/customersAccount ", name: "Customers Account ", sublinks: [] },
+    ],
+  },
+  {
+    id: "ws7",
+    name: "Loaning",
+    title: "Loaning",
+    icon: <FaWallet className="text-2xl" />,
+    dms: [
+      { id: "Loaning/LoanProducts", name: "Loan Products", sublinks: [] },
+      { id: "Loaning/LoanApplication", name: "Loan Application", sublinks: [] },
+      { id: "Loaning/LoanSector", name: "Loan Sector", sublinks: [] },
+      { id: "Loaning/LoanSubSector", name: "Loan SubSector", sublinks: [] },
+      { id: "Loaning/LoanCalculator", name: "Loan Calculator", sublinks: [] },
+      { id: "Loaning/LoanReports", name: "Loan Reports", sublinks: [] },
+
+
     ],
   },
 ];

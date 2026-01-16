@@ -40,7 +40,6 @@ export default function EditBranchDrawer({ open, onClose, onSuccess, branch }) {
       }
     };
     fetchbranches();
-
   }, []);
 
   // Prefill form when editing
@@ -61,11 +60,11 @@ export default function EditBranchDrawer({ open, onClose, onSuccess, branch }) {
 
     try {
       const res = await Base_Url.put(`/employee-branches/${branch.Code}`, formData);
-      if (res.status !== 200) throw new Error("Failed to update branch");
-
-
-      Swal.fire("Success", "Branch updated successfully!", "success");
-
+      if (res.data.success) {
+        Swal.fire("Success", res.data.message, "success");
+      } else {
+        Swal.fire("Error", res.data.message, "error");
+      }
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {

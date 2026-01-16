@@ -9,10 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaDollarSign, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import {
-  getEarnings,
-  deleteEarning,
-} from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddEmployeeEarnings from "./AddEmployeeEarnings";
@@ -37,7 +34,7 @@ export default function EmployeeEarnings() {
   const fetchEarnings = async () => {
   try {
     setLoading(true);
-    const res = await getEarnings();
+    const res = await payrollsetupApiConfig.get("/employee-earnings");
     setEarnings(res.data?.data || []); 
   } catch (error) {
     console.error("Error fetching earnings:", error);
@@ -63,7 +60,7 @@ export default function EmployeeEarnings() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteEarning(id);
+          const res = await payrollsetupApiConfig.delete(`/employee-earnings/${id}`);
           if (res.status !== 200) throw new Error("Failed to delete earning");
           Swal.fire("Deleted!", "Earning has been deleted.", "success");
           fetchEarnings();

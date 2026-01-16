@@ -19,7 +19,8 @@ import EmployeeAccountSetup from "./EmployeeAccounts/EmployeeAccountSetup";
 import EmployeeDeductions from "./EmployeeAccounts/EmployeeDeductions/EmployeeDeductions";
 import SalaryCycle from "./EmployeeAccounts/EmployeeSalaryCycle/SalaryCycle";
 import InsuranceCompanies from "./EmployeeInsuarance/EmployeeInsuaranceSetup";
-import Payslip from "./Reports&Payrol/Payslip";
+//import Payslip from "./Reports&Payrol/Payslip";
+import Payslip from "./Payslip";
 import AnnualTaxReport from "./Reports&Payrol/TaxReport";
 
 // Dummy subcomponents
@@ -49,27 +50,19 @@ function EmployeeSetup() {
       icon: FaUser,
     },
     {
-      id: 4,
-      name: "Payslip and Reports",
-      subtitle: "Employee Payslips and Reports",
+      id: 31,
+      name: "Payslip",
+      subtitle: "Get Employee Payslips",
+      icon: FaMoneyBillWave,
+    },
+    {
+      id: 32,
+      name: "Tax Reports",
+      subtitle: "Get employee's Tax Reports",
       icon: FaChartLine,
-      hasSublinks: true,
-      sublinks: [
-        {
-          id: 31,
-          name: "Payslip",
-          subtitle: "Get Employee Payslips",
-          icon: FaMoneyBillWave,
-        },
-        {
-          id: 32,
-          name: "Tax Reports",
-          subtitle: "Get employee's Tax Reports",
-          icon: FaChartLine,
-        },
-      ],
     },
   ];
+
 
   const user = selectedUser || users[0];
 
@@ -95,43 +88,28 @@ function EmployeeSetup() {
   };
 
   const renderContent = () => {
-    if (selectedSublink) {
-      switch (selectedSublink.name) {
-        case "Payroll Setup":
-          return <PayrollSetup />;
-        case "Earnings":
-          return <EmployeeEarnings />;
-        case "Employees Deductions":
-          return <EmployeeDeductions />;
-        case "Salary Cycle":
-          return <SalaryCycle />;
-        case "Payroll Reports":
-          return <PayrollReports />;
-        case "Payslip":
-          return <Payslip />;
-        case "Tax Reports":
-          return <AnnualTaxReport />;
-        default:
-          return <EmployeeAccountSetup />;
-      }
-    }
+
 
     switch (user.name) {
       case "Employees":
         return <Employees />;
-      case "Accounts":
-        return <EmployeeAccountSetup />;
-      case "Insurance":
-        return <InsuranceCompanies />;
+
+      case "Payslip":
+        return <Payslip />;
+
+      case "Tax Reports":
+        return <AnnualTaxReport />;
+
       default:
         return <p>Select an option from the sidebar</p>;
     }
+
   };
 
   return (
     <div className="flex h-screen bg-slate-50">
       {/* LEFT SIDEBAR */}
-      <aside className="w-96 border-r bg-white p-4 flex flex-col">
+      <aside className="w-78 border-r bg-white p-4 flex flex-col">
         <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <MdPerson className="text-white" /> Employee Setup
@@ -145,29 +123,26 @@ function EmployeeSetup() {
                 {/* Main Item */}
                 <Card
                   onClick={() => handleMainItemClick(u)}
-                  className={`p-3 cursor-pointer transition-all duration-200 ${
-                    user.id === u.id && !selectedSublink
-                      ? "bg-indigo-800 text-white shadow-lg"
-                      : "hover:bg-gray-50"
-                  }`}
+                  className={`p-3 cursor-pointer transition-all duration-200 ${user.id === u.id && !selectedSublink
+                    ? "bg-indigo-800 text-white shadow-lg"
+                    : "hover:bg-gray-50"
+                    }`}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <u.icon
-                        className={`text-lg ${
-                          user.id === u.id && !selectedSublink
-                            ? "text-white"
-                            : "text-indigo-600"
-                        }`}
-                      />
+                      {/* <u.icon
+                        className={`text-lg ${user.id === u.id && !selectedSublink
+                          ? "text-white"
+                          : "text-indigo-600"
+                          }`}
+                      /> */}
                       <div>
                         <p className="text-sm font-medium">{u.name}</p>
                         <p
-                          className={`text-xs ${
-                            user.id === u.id && !selectedSublink
-                              ? "text-indigo-200"
-                              : "text-muted-foreground"
-                          }`}
+                          className={`text-xs ${user.id === u.id && !selectedSublink
+                            ? "text-indigo-200"
+                            : "text-muted-foreground"
+                            }`}
                         >
                           {u.subtitle}
                         </p>
@@ -176,29 +151,26 @@ function EmployeeSetup() {
                     {u.hasSublinks && (
                       <div className="flex items-center gap-2">
                         <Badge
-                          className={`${
-                            user.id === u.id && !selectedSublink
-                              ? "bg-indigo-600 hover:bg-indigo-600 text-white"
-                              : "bg-gray-200 hover:bg-gray-200 text-gray-900"
-                          }`}
+                          className={`${user.id === u.id && !selectedSublink
+                            ? "bg-indigo-600 hover:bg-indigo-600 text-white"
+                            : "bg-gray-200 hover:bg-gray-200 text-gray-900"
+                            }`}
                         >
                           {u.sublinks?.length || 0}
                         </Badge>
                         {expandedMenus[u.id] ? (
                           <MdExpandLess
-                            className={`text-lg ${
-                              user.id === u.id && !selectedSublink
-                                ? "text-white"
-                                : "text-gray-500"
-                            }`}
+                            className={`text-lg ${user.id === u.id && !selectedSublink
+                              ? "text-white"
+                              : "text-gray-500"
+                              }`}
                           />
                         ) : (
                           <MdExpandMore
-                            className={`text-lg ${
-                              user.id === u.id && !selectedSublink
-                                ? "text-white"
-                                : "text-gray-500"
-                            }`}
+                            className={`text-lg ${user.id === u.id && !selectedSublink
+                              ? "text-white"
+                              : "text-gray-500"
+                              }`}
                           />
                         )}
                       </div>
@@ -206,52 +178,6 @@ function EmployeeSetup() {
                   </div>
                 </Card>
 
-                {/* Sublinks */}
-                {u.hasSublinks && expandedMenus[u.id] && (
-                  <div className="ml-4 mt-2 space-y-1">
-                    {u.sublinks.map((sublink) => (
-                      <Card
-                        key={sublink.id}
-                        onClick={() => handleSubLinkClick(sublink, u)}
-                        className={`p-2 cursor-pointer transition-all duration-200 border-l-4 ${
-                          selectedSublink?.id === sublink.id
-                            ? "bg-indigo-100 border-l-indigo-500 shadow-sm"
-                            : "bg-white border-l-gray-200 hover:bg-indigo-50 hover:border-l-indigo-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <sublink.icon
-                            className={`text-sm ${
-                              selectedSublink?.id === sublink.id
-                                ? "text-indigo-600"
-                                : "text-gray-500"
-                            }`}
-                          />
-                          <div>
-                            <p
-                              className={`text-xs font-medium ${
-                                selectedSublink?.id === sublink.id
-                                  ? "text-indigo-800"
-                                  : "text-gray-700"
-                              }`}
-                            >
-                              {sublink.name}
-                            </p>
-                            <p
-                              className={`text-xs ${
-                                selectedSublink?.id === sublink.id
-                                  ? "text-indigo-600"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {sublink.subtitle}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
               </div>
             ))}
           </div>

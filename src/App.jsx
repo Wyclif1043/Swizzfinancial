@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
 import Layout from "./components/Layout";
 
 
@@ -61,8 +62,32 @@ import ProjectsWithBudgets from "./pages/Procurement/ProjectsWithBudgets/Project
 import QuotationSubmission from "./pages/Procurement/Quotation/QuotationSubmission.jsx";
 import Quotations from "./pages/Procurement/Quotation/Quotations.jsx";
 import BidAnalysis from "./pages/Procurement/Biding/BidAnalysis.jsx";
+
 import PostingJournal from "./pages/Finance/postjournal/PostingJournal.jsx";
 import SalesInvoice from "./pages/Finance/AccountsReceivable/Salesinvoice/salesInvoice.jsx";
+import DocumentAttach from "./pages/Procurement/Document/index.jsx";
+import VendorComparison from "./pages/Procurement/VendorComparison/index.jsx";
+import Membership from "./pages/Membership/index.jsx";
+import Members from "./pages/Membership/Members/index.jsx";
+import CustomersAccount from "./pages/Membership/CustomerAccounts/index.jsx";
+import Employers from "./pages/Membership/Employers/index.jsx";
+import CustomersAccounts from "./pages/Membership/CustomerAccounts/index.jsx";
+import Companies from "./pages/Membership/companies/index.jsx";
+import Branches from "./pages/Membership/branches/index.jsx";
+import Division from "./pages/Membership/Division/index.jsx";
+import Zones from "./pages/Membership/Zones/index.jsx";
+import Stations from "./pages/Membership/Stations/index.jsx";
+import Administrative from "./pages/Membership/Administrative/index.jsx";
+import Products from "./pages/Membership/Products/index.jsx";
+import Loaning from "./pages/Loaning/index.jsx";
+import LoanProducts from "./pages/Loaning/LoanProducts/index.jsx";
+import LoanApplication from "./pages/Loaning/LoanApplication/index.jsx";
+import MemberReceipting from "./pages/Finance/MemberReceipting/index.jsx";
+import LoanSector from "./pages/Loaning/LoanSector/index.jsx";
+import LoanSubSector from "./pages/Loaning/LoanSubSector/index.jsx";
+import LoanCalculator from "./pages/Loaning/LoanCalculator/index.jsx";
+import LoanReports from "./pages/Loaning/LoanReports/index.jsx";
+import Creditbatches from "./pages/Finance/Creditbatches/index.jsx";
 
 
 
@@ -70,38 +95,38 @@ export default function App() {
   return (
     <Router>
       <Routes>
+        {/* Redirect root to login */}
+        {/*<Route path="/" element={<Navigate to="/login" replace />} />*/}
+
         {/* Login route WITHOUT Layout */}
         <Route path="/login" element={<Login />} />
 
         {/* All other routes WITH Layout */}
-        <Route path="/" element={<Layout />}>
+        <Route path="/*" element={<Layout />}>
 
-
-          {/* Payroll */}
-          <Route path="Payroll" element={<Payroll />} />
-          <Route path="Payroll/payrollsetup" element={<PayrollSetup />} />
-          <Route path="Payroll/statutorysetup" element={<StatutorySetup />} />
-          <Route path="Payroll/Employees" element={<EmployeeSetup />} />
           <Route path="department" element={<Departments />} />
           <Route path="leave" element={<Leaves />} />
 
           {/* FixedAssets */}
-          <Route path="/FixedAssets" element={<FixedAssetsSetup />} />
-          <Route path="/FixedAssets/Category" element={<FixCategory />} />
-          <Route path="/FixedAssets/Location" element={<Location />} />
+          <Route path="FixedAssets" element={<FixedAssetsSetup />} />
+          <Route path="FixedAssets/Category" element={<FixCategory />} />
+          <Route path="FixedAssets/Location" element={<Location />} />
           <Route path="FixedAssets/FixedAssetCard" element={<FixedAssetsSetup />} />
 
           {/* Procurement */}
-          <Route path="/Procurement" element={<Procument />} />
-          <Route path="/Procurement/Vendors" element={<ProVendors />} />
-          <Route path="/Procurement/requisitions" element={<ProRequisitions />} />
+          <Route path="Procurement" element={<Procument />} />
+          <Route path="Procurement/Vendors" element={<ProVendors />} />
+          <Route path="Procurement/requisitions" element={<ProRequisitions />} />
           <Route path="Procurement/StoreRequisitions" element={<StoreRequisitions />} />
-          <Route path="/Procurement/PurchaseOrder" element={<PurchaseOrder />} />
-          <Route path="/Procurement/SubmitQuotation" element={<QuotationSubmission />} />
-          <Route path="/Procurement/Quotation" element={<Quotations />} />
-          <Route path="/Procurement/RFQ" element={<RequestForQuotation />} />
-          <Route path="/Procurement/ProjectsWithBudgets" element={<ProjectsWithBudgets />} />
-          <Route path="/Procurement/Biding" element={<BidAnalysis />} />
+          <Route path="Procurement/PurchaseOrder" element={<PurchaseOrder />} />
+          <Route path="Procurement/SubmitQuotation" element={<QuotationSubmission />} />
+          <Route path="Procurement/Quotation" element={<Quotations />} />
+          <Route path="Procurement/RFQ" element={<RequestForQuotation />} />
+          <Route path="Procurement/ProjectsWithBudgets" element={<ProjectsWithBudgets />} />
+          <Route path="Procurement/Biding" element={<BidAnalysis />} />
+          <Route path="Procurement/Document" element={<DocumentAttach />} />
+          <Route path="Procurement/comparison" element={<VendorComparison />} />
+
 
           {/* Finance */}
           <Route path="Finance" element={<Finance />} />
@@ -116,9 +141,11 @@ export default function App() {
           {/* <Route path="Finance/GeneralLedger" element={<GeneralLedger />} /> */}
           <Route path="GeneralLedger/reports" element={<h1>GL Reports</h1>} />
           {/* <Route path="GeneralLedger/settings" element={<h1>GL Settings</h1>} /> */}
+          <Route path="Finance/MemberReceipting" element={<MemberReceipting />} />
 
           <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
           <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} />
+          <Route path="Finance/Creditbatches" element={<Creditbatches />} />
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
 
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />
@@ -128,10 +155,16 @@ export default function App() {
           <Route path="FinancialReporting" element={<h1>Financial Reporting</h1>} />
 
           {/* Payroll Account Setup */}
-          <Route path="/Payroll/Accounts" element={<AccountsSetup />} />
+          <Route path="Payroll/Accounts" element={<AccountsSetup />} />
+          {/* Payroll */}
+          <Route path="Payroll" element={<Payroll />} />
+          <Route path="Payroll/payrollsetup" element={<PayrollSetup />} />
+          <Route path="Payroll/statutorysetup" element={<StatutorySetup />} />
+          <Route path="Payroll/Employees" element={<EmployeeSetup />} />
+
 
           {/* Inventory */}
-          <Route path="Inventory" element={<h1>Inventory</h1>} />
+          <Route path="Inventory" element={<InventoryDashboard />} />
           <Route path="Inventory/Inventory" element={<InventoryDashboard />} />
           <Route path="Inventory/invcategories" element={<Invcategory />} />
           <Route path="Inventory/Invlocations" element={<InvLocation />} />
@@ -144,6 +177,29 @@ export default function App() {
           <Route path="Inventory/TransfersbetweenWarehouses" element={<h1>Transfers between Warehouses</h1>} />
           <Route path="Inventory/StockAdjustments" element={<h1>Stock Adjustments</h1>} />
           <Route path="Inventory/StockReportingAndAlerts" element={<h1>Stock Reporting & Alerts</h1>} />
+
+          {/**Membership */}
+          <Route path="Membership" element={<Membership />} />
+          <Route path="Membership/companies" element={<Companies />} />
+          <Route path="Membership/branches" element={<Branches />} />
+          <Route path="Membership/Division" element={<Division />} />
+          <Route path="Membership/Zones" element={<Zones />} />
+          <Route path="Membership/Stations" element={<Stations />} />
+          <Route path="Membership/Employers" element={<Employers />} />
+          <Route path="Membership/Administrative" element={<Administrative />} />
+          <Route path="Membership/Products" element={<Products />} />
+          <Route path="Membership/Members" element={<Members />} />
+          <Route path="Membership/customersAccount" element={<CustomersAccounts />} />
+
+          {/**Loaning */}
+          <Route path="Loaning" element={<Loaning />} />
+          <Route path="Loaning/LoanProducts" element={<LoanProducts />} />
+          <Route path="Loaning/LoanApplication" element={<LoanApplication />} />
+          <Route path="Loaning/LoanSector" element={<LoanSector />} />
+          <Route path="Loaning/LoanSubSector" element={<LoanSubSector />} />
+          <Route path="Loaning/LoanCalculator" element={<LoanCalculator />} />
+          <Route path="Loaning/LoanReports" element={<LoanReports />} />
+
         </Route>
       </Routes>
     </Router>

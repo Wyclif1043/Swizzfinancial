@@ -114,12 +114,12 @@ export default function ProRequisitions() {
       {/* Tabs */}
       <Tabs defaultValue="Draft" className="max-w-full">
         <TabsList className="flex flex-wrap justify-center gap-3 bg-indigo-800 text-white min-h-15 rounded-xl  p-2 mb-2 shadow-inner ">
-          
+
           <TabsTrigger
             value="Draft"
             className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition"
           >
-            <FaFileAlt /> Draft
+            <FaFileAlt /> Draft 
           </TabsTrigger>
 
           <TabsTrigger
@@ -129,25 +129,25 @@ export default function ProRequisitions() {
             <FaPaperPlane /> Send For Approval
           </TabsTrigger>
           <div className="flex bg-gray-100 rounded-lg p-1 shadow-md">
-          <TabsTrigger
-            value="Approved"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition text-indigo-700  hover:text-white"
-          >
-            <FaCheckCircle /> Approved
-          </TabsTrigger>
-          <span className="text-indigo-700 flex justify-center items-center font-semibold">|</span>
-          <TabsTrigger
-            value="rejected"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition text-indigo-700 hover:text-white"
-          >
-            <FaTimesCircle /> Rejected
-          </TabsTrigger>
+            <TabsTrigger
+              value="Approved"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition text-indigo-700  hover:text-white"
+            >
+              <FaCheckCircle /> Approved
+            </TabsTrigger>
+            <span className="text-indigo-700 flex justify-center items-center font-semibold">|</span>
+            <TabsTrigger
+              value="rejected"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition text-indigo-700 hover:text-white"
+            >
+              <FaTimesCircle /> Rejected
+            </TabsTrigger>
           </div>
           <TabsTrigger
             value="convertToPo"
             className="flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white hover:bg-indigo-600 transition"
           >
-            <FaFileInvoice /> Converted To Purchase Order
+            <FaFileInvoice /> Converted To Requisition
           </TabsTrigger>
 
           {/* <TabsTrigger
@@ -157,7 +157,7 @@ export default function ProRequisitions() {
             <FaExchangeAlt /> Issued
           </TabsTrigger> */}
 
-          
+
         </TabsList>
 
         {/* Tab Contents */}

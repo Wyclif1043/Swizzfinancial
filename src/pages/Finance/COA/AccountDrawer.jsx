@@ -18,6 +18,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import NotFoundImage from "/assets/scopefinding.png";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 export default function AccountDrawer({ account, open, onClose }) {
   const [transactions, setTransactions] = useState([]);
@@ -45,6 +48,120 @@ export default function AccountDrawer({ account, open, onClose }) {
   // Calculate totals
   const totalDebit = transactions.reduce((sum, t) => sum + t.Debit, 0);
   const totalCredit = transactions.reduce((sum, t) => sum + t.Credit, 0);
+
+
+  const handlePrintPDF = () => {
+    if (!account) return;
+
+    const doc = new jsPDF("p", "mm", "a4");
+
+    const marginLeft = 14;
+    let cursorY = 15;
+
+    // ===== Header =====
+    doc.setFontSize(14);
+    doc.text("Account Statement", marginLeft, cursorY);
+
+    doc.setFontSize(9);
+    doc.text(
+      `Generated on: ${new Date().toLocaleString()}`,
+      marginLeft,
+      cursorY + 6
+    );
+
+    cursorY += 14;
+
+    // ===== Account Info =====
+    doc.setFontSize(11);
+    doc.text(`Account Code: ${account.Code}`, marginLeft, cursorY);
+    cursorY += 6;
+
+    doc.text(`Description: ${account.Description}`, marginLeft, cursorY);
+    cursorY += 6;
+
+    doc.text(`Category: ${account.CategoryDescription}`, marginLeft, cursorY);
+    cursorY += 6;
+
+    doc.text(
+      `Balance: ${account.Balance.toLocaleString("en-US", {
+        style: "currency",
+        currency: "KES",
+      })}`,
+      marginLeft,
+      cursorY
+    );
+
+    cursorY += 10;
+
+    // ===== Totals =====
+    doc.setFontSize(10);
+    doc.text(
+      `Total Debit: ${totalDebit.toLocaleString("en-US", {
+        style: "currency",
+        currency: "KES",
+      })}`,
+      marginLeft,
+      cursorY
+    );
+
+    doc.text(
+      `Total Credit: ${totalCredit.toLocaleString("en-US", {
+        style: "currency",
+        currency: "KES",
+      })}`,
+      marginLeft + 90,
+      cursorY
+    );
+
+    cursorY += 8;
+
+    // ===== Transactions Table =====
+    const tableData = transactions.map((tx) => [
+      new Date(tx.JournalValueDate).toLocaleDateString(),
+      tx.JournalPrimaryDescription,
+      tx.Debit.toLocaleString(),
+      tx.Credit.toLocaleString(),
+      tx.RunningBalance.toLocaleString(),
+      tx.ContraGLAccountDescription,
+    ]);
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [[
+        "Date",
+        "Description",
+        "Debit",
+        "Credit",
+        "Balance",
+        "Bal Account",
+      ]],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [79, 70, 229], // Indigo
+        textColor: 255,
+      },
+      columnStyles: {
+        2: { halign: "right" },
+        3: { halign: "right" },
+        4: { halign: "right" },
+      },
+      didDrawPage: (data) => {
+        doc.setFontSize(8);
+        doc.text(
+          `Page ${doc.internal.getNumberOfPages()}`,
+          data.settings.margin.left,
+          doc.internal.pageSize.height - 10
+        );
+      },
+    });
+
+    doc.save(`Account_Statement_${account.Code}.pdf`);
+  };
+
 
   return (
     <AnimatePresence>
@@ -88,7 +205,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                     {/* Fake Card Preview */}
                     <div className="bg-gradient-to-r from-gray-600 to-gray-800 rounded-2xl p-6 w-100 text-white shadow-inner ">
                       <div className="mb-6 flex justify-between">
-                        <div className="w-12 h-8 bg-indigo-400 px-2 rounded-md flex items-center justify-center"> 
+                        <div className="w-12 h-8 bg-indigo-400 px-2 rounded-md flex items-center justify-center">
                         </div>
                         <div>Code {account.Code || "XXXX"}</div>
                       </div>
@@ -121,13 +238,13 @@ export default function AccountDrawer({ account, open, onClose }) {
                             })}
                           </p>
                         </div>
-                      </div>  
+                      </div>
                     </div>
 
 
 
 
-                    
+
 
                     {/* Available Amount */}
                     <div className="flex-1 space-y-6">
@@ -154,8 +271,13 @@ export default function AccountDrawer({ account, open, onClose }) {
 
 
               {/* Transactions Table */}
-              <div className="mt-4 ">
-                <h3 className="font-semibold mb-2">Transactions</h3>
+              <div className="mt-4 max-h-[300px] overflow-y-auto">
+                <div className="flex justify-between m-2">
+                  <h3 className="font-semibold mb-2">Transactions</h3>
+                  <Button variant="outline" size="sm" onClick={handlePrintPDF} className="bg-indigo-600 text-white hover:text-white hover:bg-indigo-400">
+                    Print PDF
+                  </Button>
+                </div>
                 <Table className="text-center bg-indigo-700">
                   <TableHeader>
                     <TableRow>
@@ -187,7 +309,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                           <TableCell>
                             {tx.RunningBalance.toLocaleString()}
                           </TableCell>
-                          
+
                           <TableCell>
                             {tx.ContraGLAccountDescription}
                           </TableCell>
@@ -198,7 +320,7 @@ export default function AccountDrawer({ account, open, onClose }) {
                         <TableCell
                           colSpan={6}
                           className="text-center py-2 text-gray-500 bg-gray-200 w-full"
-                        >           
+                        >
                           <div className="text-gray-500 text-center mt-4">
                             <img
                               src={NotFoundImage}

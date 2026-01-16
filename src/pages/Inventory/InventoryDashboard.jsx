@@ -92,7 +92,7 @@ export default function InventoryDashboard() {
             <h1 className="text-2xl font-semibold tracking-tight text-white">Inventory Dashboard</h1>
             <p className="text-sm text-white">Stock Receipts · Issues · Transfers · Adjustments</p>
           </div>
-          
+
         </div>
 
         {/* Grid */}
@@ -116,11 +116,11 @@ export default function InventoryDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-4">
-                  <KPI label="Receipts" value="1,200" trend="up" delta="+8%" icon={<TrendingUp className="h-4 w-4"/>} className="bg-indigo-600"/>
-                  <KPI label="Issues" value="980" trend="down" delta="-3%" icon={<TrendingDown className="h-4 w-4"/>}/>
-                  <KPI label="Transfers" value="320" trend="up" delta="+5%" icon={<Truck className="h-4 w-4"/>}/>
-                  <KPI label="Adjustments" value="45" trend="neutral" delta="~" icon={<ClipboardCheck className="h-4 w-4 text-indigo-600"/>}/>
-                  
+                  <KPI label="Receipts" value="1,200" trend="up" delta="+8%" icon={<TrendingUp className="h-4 w-4" />} className="bg-indigo-600" />
+                  <KPI label="Issues" value="980" trend="down" delta="-3%" icon={<TrendingDown className="h-4 w-4" />} />
+                  <KPI label="Transfers" value="320" trend="up" delta="+5%" icon={<Truck className="h-4 w-4" />} />
+                  <KPI label="Adjustments" value="45" trend="neutral" delta="~" icon={<ClipboardCheck className="h-4 w-4 text-indigo-600" />} />
+
                 </div>
 
                 <div className="mt-6 h-48 w-full">
@@ -128,8 +128,8 @@ export default function InventoryDashboard() {
                     <AreaChart data={stockFlow} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="stock" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4f39f6" stopOpacity={0.35}/>
-                          <stop offset="95%" stopColor="#4f39f6" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#4f39f6" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#4f39f6" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="name" tickLine={false} axisLine={false} />
@@ -150,7 +150,7 @@ export default function InventoryDashboard() {
                     <CardTitle className="text-lg">Stock Movements Log</CardTitle>
                     <CardDescription>Recent receipts, issues, transfers & adjustments</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="gap-2"><PackageOpen className="h-4 w-4"/>New Entry</Button>
+                  <Button variant="outline" size="sm" className="gap-2"><PackageOpen className="h-4 w-4" />New Entry</Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -198,7 +198,7 @@ export default function InventoryDashboard() {
                   <div key={w.name} className="rounded-2xl border bg-background p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Warehouse className="h-4 w-4"/>
+                        <Warehouse className="h-4 w-4" />
                         <span className="font-medium">{w.name}</span>
                       </div>
                       <span className="text-sm tabular-nums">{w.stock}</span>
@@ -223,25 +223,25 @@ export default function InventoryDashboard() {
                   <div key={a.item} className="rounded-2xl border p-4 bg-white">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-600"/>
+                        <AlertTriangle className="h-4 w-4 text-amber-600" />
                         <span className="font-medium">{a.item}</span>
                       </div>
                       <Badge variant="secondary">{a.warehouse}</Badge>
                     </div>
-                    <Progress value={a.status} className="h-2 bg-gray-300 [&>div]:bg-indigo-700"/>
+                    <Progress value={a.status} className="h-2 bg-gray-300 [&>div]:bg-indigo-700" />
                     <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{a.status}% capacity</span>
                       {a.status >= 95 ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5"/>Healthy</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5" />Healthy</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5"/>Monitor</span>
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" />Monitor</span>
                       )}
                     </div>
                   </div>
                 ))}
               </CardContent>
               <CardFooter className="justify-end">
-                <Button size="sm" className="gap-2"><Upload className="h-4 w-4"/>View More</Button>
+                <Button size="sm" className="gap-2"><Upload className="h-4 w-4" />View More</Button>
               </CardFooter>
             </Card>
 

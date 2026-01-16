@@ -9,11 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaDollarSign, FaPlus, FaEdit, FaTrash, FaCheckCircle } from "react-icons/fa";
-import {
-  getSalaryCycles,
-  deleteSalaryCycle,
-  processSalaryCycle, // ✅ add this API in your SalaryCycleApis
-} from "../../../../../apis/employeesapi/SalaryCycleApis";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddSalaryCycle from "./AddSalaryCycle";
@@ -37,7 +33,7 @@ export default function SalaryCycle() {
   const fetchSalaryCycles = async () => {
     try {
       setLoading(true);
-      const res = await getSalaryCycles();
+      const res = await payrollsetupApiConfig.get("/salary-cycles");
       const normalized = (res.data?.data || []).map((c) => ({
         id: c.Id,
         name: c.Name,
@@ -70,7 +66,7 @@ export default function SalaryCycle() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteSalaryCycle(id);
+          const res = await payrollsetupApiConfig.delete(`/salary-cycles/${id}`);
           if (res.status !== 200)
             throw new Error("Failed to delete salary cycle");
           Swal.fire("Deleted!", "Salary cycle has been deleted.", "success");
@@ -111,7 +107,7 @@ export default function SalaryCycle() {
           // "payslipsGenerated": true,
         }
         try {
-          const res = await processSalaryCycle(payload);
+          const res = await payrollsetupApiConfig.post(`/payroll-closures`, payload);
           if (res.status !== 201)
             throw new Error("Failed to process salary cycle");
           Swal.fire("Success!", "Salary cycle has been processed.", "success");

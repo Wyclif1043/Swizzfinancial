@@ -34,7 +34,6 @@ export default function InsuranceCompanies() {
     finally {
       setLoading(false)
     }
-
   };
 
   useEffect(() => {
@@ -55,9 +54,11 @@ export default function InsuranceCompanies() {
       if (result.isConfirmed) {
         try {
           const res = await Base_Url.delete(`/employee-insurance-companies/${code}`);
-          if (res.status !== 200) throw new Error("Failed to delete");
-
-          Swal.fire("Deleted!", "Insurance company has been deleted.", "success");
+          if (res.data.success) {
+            Swal.fire("Success", res.data.message, "success");
+          } else {
+            Swal.fire("Error", res.data.message, "error");
+          }
           fetchCompanies();
         } catch (err) {
           Swal.fire("Error!", "Failed to delete company.", "error");

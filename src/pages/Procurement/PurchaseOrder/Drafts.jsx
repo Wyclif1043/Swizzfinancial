@@ -4,9 +4,14 @@ import {
   FaChevronDown,
   FaChevronUp,
   FaBuilding,
+  FaFilePdf,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "../../../assets/adra.png";
+
 
 export default function Drafts() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -95,17 +100,110 @@ export default function Drafts() {
     });
   };
 
+
+
+  const downloadPDF = (po) => {
+    const doc = new jsPDF("p", "pt", "a4");
+
+    // COLORS
+    const green = "#0a6b3c";
+
+    // ---------------------------
+    //  HEADER (Logo + Title Bar)
+    // ---------------------------
+    // If you have base64 logo: doc.addImage(logoBase64, "PNG", 40, 40, 80, 80);
+    doc.addImage(logo, "PNG", 15, 10, 80, 80);
+
+    // Green title background
+    doc.setFillColor(green);
+    doc.rect(100, 40, 500, 50, "F");
+
+    doc.setFontSize(16);
+    doc.setTextColor("#FFFFFF");
+    doc.text("REQUEST FOR QUOTATION", 260, 70);
+
+    // ---------------------------
+    //  RFQ TO / RFQ FROM SECTION
+    // ---------------------------
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("RFQ To:", 40, 140);
+
+    doc.setTextColor("#000");
+    doc.setFontSize(12);
+    doc.text(`${po.SupplierName}`, 40, 160);
+    doc.text(`${po.SupplierAddress}`, 40, 180);
+
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("RFQ From:", 300, 140);
+
+    doc.setTextColor("#000");
+    doc.setFontSize(12);
+    doc.text("ADRA Kenya", 300, 160);
+    doc.text("Procurement Department", 300, 180);
+    doc.text("www.adrakenya.org", 300, 200);
+
+    // ---------------------------
+    //  TABLE
+    // ---------------------------
+    const tableData = po.Lines.map((line) => [
+      line.ItemDescription,
+      line.QuantityOrdered,
+      line.Unit,
+      `${po.Currency} ${(line.QuantityOrdered * line.UnitPrice).toLocaleString()}`,
+    ]);
+
+    autoTable(doc, {
+      startY: 240,
+      headStyles: {
+        fillColor: green,
+        textColor: "#fff",
+        halign: "center",
+      },
+      head: [["Item Description", "Quantity", "Unit", "Amount (KES)"]],
+      body: tableData,
+      styles: { fontSize: 11 },
+      columnStyles: {
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "right" },
+      },
+    });
+
+    // ---------------------------
+    //  FOOTER MESSAGE
+    // ---------------------------
+    const finalY = doc.lastAutoTable.finalY + 60;
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("Thank you for your collaboration.", 200, finalY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      "This document is confidential and intended solely for the recipient. Unauthorized sharing or duplication is prohibited.",
+      50, finalY + 15,
+    );
+
+    doc.save(`RFQ_${po.PONumber}.pdf`);
+  };
+
+
+
+
   return (
     <div className="bg-white py-8 rounded-lg">
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-7 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-8 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span className="col-span-1">PO Number</span>
           <span className="col-span-1">Supplier</span>
           <span className="col-span-1">Order Date</span>
           <span className="col-span-1">Status</span>
           <span className="col-span-1">Total</span>
-          <span className="col-span-2 text-right">Actions</span>
+          <span className="col-span-3 text-right">Actions</span>
         </div>
 
         {loading ? (
@@ -129,7 +227,7 @@ export default function Drafts() {
                 className="bg-white rounded-lg shadow-lg border"
               >
                 {/* Row */}
-                <div className="grid grid-cols-7 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                <div className="grid grid-cols-8 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                   <span className="font-medium text-indigo-700 col-span-1">
                     {po.PONumber}
                   </span>
@@ -147,13 +245,21 @@ export default function Drafts() {
                   </span>
 
                   {/* Actions */}
-                  <div className="flex gap-2 col-span-2 justify-end">
+                  <div className="flex gap-2 col-span-3 justify-end">
                     <Button
                       className="bg-indigo-600 text-white hover:bg-indigo-700"
                       onClick={() => openModal(po)}
                     >
                       Convert to GRN
                     </Button>
+
+                    <Button
+                      className="bg-red-600 text-white hover:bg-red-700"
+                      onClick={() => downloadPDF(po)}
+                    >
+                      <FaFilePdf /> PDF
+                    </Button>
+
                     <Button
                       size="sm"
                       variant="outline"

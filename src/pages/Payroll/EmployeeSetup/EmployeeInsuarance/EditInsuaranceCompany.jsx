@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateEmployeeInsuranceCompanyApi } from "../../../../apis/employeesapi/EmployeesInsuarance";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function EditInsuranceCompany({
@@ -34,12 +34,12 @@ export default function EditInsuranceCompany({
 
     try {
       const payload = {
-        Code: company.id, // backend expects Code
-        Name: formData.name, // backend expects Name
-        Address: formData.address, // backend expects Address
+        Code: company.id, 
+        Name: formData.name,
+        Address: formData.address, 
       };
 
-      const res = await updateEmployeeInsuranceCompanyApi(company.id, payload);
+      const res = await payrollsetupApiConfig.put(`/employee-insurance-companies/${company.id}`, payload);
       if (res.status !== 200)
         throw new Error("Failed to update Insurance Company");
 

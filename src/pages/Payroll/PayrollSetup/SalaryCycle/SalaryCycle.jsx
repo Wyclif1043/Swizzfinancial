@@ -8,16 +8,19 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { FaDollarSign, FaPlus, FaEdit, FaTrash, FaCheckCircle } from "react-icons/fa";
 import {
-  getSalaryCycles,
-  deleteSalaryCycle,
-  processSalaryCycle, // ✅ add this API in your SalaryCycleApis
-} from "../../../../apis/employeesapi/SalaryCycleApis";
+  FaDollarSign,
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaCheckCircle,
+} from "react-icons/fa";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import AddSalaryCycle from "./AddSalaryCycleDrawer"
+import AddSalaryCycle from "./AddSalaryCycleDrawer";
 import EditSalaryCycle from "./EditSalaryCycleDrawer";
+import Base_Url from "../../../../apis/BaseApi";
 
 export default function SalaryCycle() {
   const [salaryCycles, setSalaryCycles] = useState([]);
@@ -37,7 +40,7 @@ export default function SalaryCycle() {
   const fetchSalaryCycles = async () => {
     try {
       setLoading(true);
-      const res = await getSalaryCycles();
+      const res = await payrollsetupApiConfig.get("/salary-cycles");
       const normalized = (res.data?.data || []).map((c) => ({
         id: c.Id,
         name: c.Name,
@@ -70,7 +73,7 @@ export default function SalaryCycle() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteSalaryCycle(id);
+          const res = await payrollsetupApiConfig.delete(`/salary-cycles/${id}`);
           if (res.status !== 200)
             throw new Error("Failed to delete salary cycle");
           Swal.fire("Deleted!", "Salary cycle has been deleted.", "success");
@@ -84,40 +87,47 @@ export default function SalaryCycle() {
 
   // Process Handler
   const handleProcess = async (id) => {
-    const cycle = salaryCycles.find(c => c.id === id);
+    const cycle = salaryCycles.find((c) => c.id === id);
 
     if (cycle.isProcessed) {
       Swal.fire("Info", "This salary cycle is already processed.", "info");
       return;
     }
+
     Swal.fire({
-      title: "Process Salary Cycle?",
-      text: "Once processed, this cycle cannot be edited or deleted.",
+      title: "Generate Payslips?",
+      text: "This will generate payslips for all employees under this cycle.",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#16a34a",
       cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, process it!",
+      confirmButtonText: "Yes, generate!",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const payload ={
-          "salaryCycleId": id,
-          "closureDate": new Date().toISOString(),   // take the current timestamp
-          "closedBy": "admin",   // for now pass admin but in the future change it to logged in user
-
-                               // for  us frontend we dont need to pass this values for now 
-          // "isClosed": true,
-          // "isPostedToGL": true,
-          // "payslipsGenerated": true,
-        }
         try {
-          const res = await processSalaryCycle(payload);
-          if (res.status !== 201)
-            throw new Error("Failed to process salary cycle");
-          Swal.fire("Success!", "Salary cycle has been processed.", "success");
-          fetchSalaryCycles();
+          const res = await Base_Url.post(`/payslips/generate`, {
+            SalaryCycleId: id,
+          });
+          console.log(res)
+
+          if (res.status === 200) {
+            Swal.fire(
+              "Success!",
+              res.data.message ||
+                `Payslips generated successfully for ${res.data.data.GeneratedCount} employees.`,
+              "success"
+            );
+            fetchSalaryCycles();
+          } else {
+            Swal.fire("Error!", "Failed to generate payslips.", "error");
+          }
         } catch (err) {
-          Swal.fire("Error!", "Failed to process salary cycle.", "error");
+          console.error(err);
+          Swal.fire(
+            "Error!",
+            "Something went wrong while generating payslips.",
+            "error"
+          );
         }
       }
     });
@@ -214,7 +224,11 @@ export default function SalaryCycle() {
               <div
                 key={cycle.id}
                 className={`grid grid-cols-6 gap-4 items-center py-4 px-6 rounded-lg shadow-lg border transition-all
-                ${cycle.isProcessed ? "bg-green-50 border-green-400" : "bg-white hover:shadow-xl"}`}
+                ${
+                  cycle.isProcessed
+                    ? "bg-green-50 border-green-400"
+                    : "bg-white hover:shadow-xl"
+                }`}
               >
                 <span className="font-medium text-indigo-700">
                   {cycle.name}
@@ -225,7 +239,11 @@ export default function SalaryCycle() {
                 <span className="text-sm">
                   {new Date(cycle.endDate).toLocaleDateString()}
                 </span>
-                <span className={`text-sm font-semibold ${cycle.isProcessed ? "text-green-700" : "text-red-600"}`}>
+                <span
+                  className={`text-sm font-semibold ${
+                    cycle.isProcessed ? "text-green-700" : "text-red-600"
+                  }`}
+                >
                   {cycle.isProcessed ? "Yes" : "No"}
                 </span>
 

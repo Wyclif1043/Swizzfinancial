@@ -36,7 +36,6 @@ export default function AddBranchDrawer({ open, onClose, onSuccess }) {
       }
     };
     fetchBanks();
-
   }, []);
 
   const handleSubmit = async (e) => {
@@ -46,15 +45,14 @@ export default function AddBranchDrawer({ open, onClose, onSuccess }) {
     try {
       const res = await Base_Url.post("/employee-branches", formData);
 
-
-      const resultresponse = res.data?.data;
-      console.log(resultresponse);
-
-      if (res.status !== 200 && res.status !== 201) {
-        throw new Error("Failed to add branch");
+      console.log(res.data);
+      if (res.data.success) {
+        Swal.fire("Success", res.data.message, "success");
+      } else {
+        Swal.fire("Error", res.data.message, "error");
       }
 
-      Swal.fire("Success", "Branch added successfully!", "success");
+      //Swal.fire("Success", "Branch added successfully!", "success");
 
       setFormData({ BranchName: "", BranchNumber: "", BankCode: "" });
 

@@ -9,11 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaBuilding, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import {
-  getEmployeeInsuranceCompanies,
-  deleteEmployeeInsuranceCompanyApi,
-  updateEmployeeInsuranceCompanyApi,
-} from "../../../../apis/employeesapi/EmployeesInsuarance";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddInsuranceCompany from "./AddInsuaranceCompany";
@@ -37,8 +33,7 @@ export default function InsuranceCompanies() {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const res = await getEmployeeInsuranceCompanies();
-      console.log("Fetched Insurance Companies:", res.data);
+      const res = await payrollsetupApiConfig.get("/employee-insurance-companies");
       const normalized = (res.data || []).map((c) => ({
         id: c.Code,
         name: c.Name,
@@ -69,7 +64,7 @@ export default function InsuranceCompanies() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteEmployeeInsuranceCompanyApi(id);
+          const res = await payrollsetupApiConfig.delete(`/employee-insurance-companies/${id}`);
           if (res.status !== 200)
             throw new Error("Failed to delete insurance company");
           Swal.fire("Deleted!", "Insurance company has been deleted.", "success");

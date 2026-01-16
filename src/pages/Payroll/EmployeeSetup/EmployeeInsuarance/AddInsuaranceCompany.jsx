@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addEmployeeInsuranceCompanyApi } from "../../../../apis/employeesapi/EmployeesInsuarance";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddInsuranceCompany({ open, onClose, onSuccess }) {
@@ -18,7 +18,7 @@ export default function AddInsuranceCompany({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await addEmployeeInsuranceCompanyApi(formData);
+      const res = await payrollsetupApiConfig.post("/employee-insurance-companies", formData);
       if (res.status !== 201 && res.status !== 200)
         throw new Error("Failed to add Insurance Company");
 

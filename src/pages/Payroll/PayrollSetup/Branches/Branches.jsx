@@ -35,7 +35,6 @@ export default function Branches() {
     } catch (error) {
       console.log(error)
     } finally { setLoading(false) }
-
   };
 
   useEffect(() => {
@@ -58,12 +57,11 @@ export default function Branches() {
           const res = await Base_Url.delete(`/employee-branches/${code}`);
           console.log(res);
 
-          if (res.status !== 200 && res.status !== 201) {
-            throw new Error("Failed to delete branch");
-
+          if (res.data.success) {
+            Swal.fire("Success", res.data.message, "success");
+          } else {
+            Swal.fire("Error", res.data.message, "error");
           }
-
-          Swal.fire("Deleted!", "Branch has been deleted.", "success");
           fetchBranches();
         } catch (err) {
           console.error(err);

@@ -13,9 +13,7 @@ import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddAccountDrawer from "./EmployeeAccount/AddAccountDrawer";
 import EditAccountDrawer from "./EmployeeAccount/EditAccountDrawer";
-import { deleteAccount } from "../../../../apis/employeesapi/EmployeeAccountingAPI'S";
-import { getAccounts } from "../../../../apis/employeesapi/EmployeeAccountingAPI'S";
-import AddSalaryCycle from "./EmployeeSalaryCycle/AddSalaryCycle";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 
 export default function EmployeeAccountSetup() {
   const [accounts, setAccounts] = useState([]);
@@ -37,7 +35,7 @@ export default function EmployeeAccountSetup() {
   const fetchAccounts = async () => {
     setLoading(true);
     try {
-      const data = await getAccounts();
+      const data = await payrollsetupApiConfig.get("/account-details")
       setAccounts(data || []);
     } catch (err) {
       console.error("Error fetching accounts:", err);
@@ -63,7 +61,7 @@ export default function EmployeeAccountSetup() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteAccount(accountId);
+          await payrollsetupApiConfig.delete(`/account-details/${accountId}`);
           Swal.fire("Deleted!", "Account has been removed.", "success");
           fetchAccounts();
         } catch (err) {

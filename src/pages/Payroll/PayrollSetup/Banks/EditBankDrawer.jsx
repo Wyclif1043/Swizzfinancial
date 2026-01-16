@@ -33,17 +33,16 @@ export default function EditBankDrawer({ open, onClose, onSuccess, bank }) {
     try {
       const res = await Base_Url.put(
         `/employee-banks/${bank.Code}`, formData
-
       );
+      if (res.data.success) {
+        Swal.fire("Success", res.data.message, "success");
+      } else {
+        Swal.fire("Error", res.data.message, "error");
+      }
 
-      console.log("passed")
-      const resultresponse = await res.json();
-      console.log(resultresponse);
-      console.log(res);
+      /// if (!res.ok) throw new Error("Failed to update bank");
 
-      if (!res.ok) throw new Error("Failed to update bank");
-
-      Swal.fire("Success", "Bank updated successfully!", "success");
+      //Swal.fire("Success", "Bank updated successfully!", "success");
 
       if (onSuccess) onSuccess();
       onClose();

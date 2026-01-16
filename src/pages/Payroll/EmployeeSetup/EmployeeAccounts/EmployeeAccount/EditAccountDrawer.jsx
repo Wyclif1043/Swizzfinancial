@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { updateAccount } from "../../../../../apis/employeesapi/EmployeeAccountingAPI'S";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function EditAccountDrawer({ open, onClose, onSuccess, account }) {
@@ -34,7 +34,7 @@ export default function EditAccountDrawer({ open, onClose, onSuccess, account })
     setLoading(true);
 
     try {
-      const res = await updateAccount(formData.Code, formData);
+      const res = await payrollsetupApiConfig.put(`/account-details/${formData.Code}`, formData);
       if (res.status !== 200 && res.status !== 201)
         throw new Error("Failed to update Account");
 

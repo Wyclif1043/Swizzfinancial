@@ -253,7 +253,7 @@ export default function AddAccountDrawer({ open, onClose, onSuccess }) {
                         <SelectTrigger >
                           <SelectValue placeholder="Select parent (optional)" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="overflow-scroll h-100">
                           {parentOptions.map((p) => (
                             <SelectItem key={p.value} value={p.value}>
                               {p.label}

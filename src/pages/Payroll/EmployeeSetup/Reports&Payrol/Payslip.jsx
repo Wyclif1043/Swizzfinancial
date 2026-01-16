@@ -13,89 +13,137 @@ import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
 import { saveAs } from "file-saver";
 import NotFoundImage from "/assets/scopefinding.png";
-import { getEmployeePayslips } from "../../../../apis/employeesapi/ReportsApi";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 
 export default function Payslip() {
   const payslipRef = useRef(null);
   const [employeeInfo, setEmployeeInfo] = useState({});
 
+  // All payslips from API
+  const [allPayslips, setAllPayslips] = useState([]);
+  const [filteredPayslip, setFilteredPayslip] = useState(null);
+
   // Filter states
-  const [memberId, setMemberId] = useState("");
-  const [year, setYear] = useState();
-  const [month, setMonth] = useState("");
+  const [employeeNumber, setEmployeeNumber] = useState("");
+  const [year, setYear] = useState("2025");
+  const [month, setMonth] = useState("September");
 
   // Payslip data
   const [earnings, setEarnings] = useState([]);
   const [deductions, setDeductions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Simulate API call
-  const fetchPayslip = async () => {
+  // Fetch all payslips on mount
+  const fetchAllPayslips = async () => {
     setLoading(true);
     try {
-      const res = await getEmployeePayslips();
-      console.log("Fetched payslip data:", res.data);
+      const res = await payrollsetupApiConfig.get("/payslips/get-all");
+      //console.log("Fetched payslip data:", res.data);
 
-      const response = res.data;
+      if (res.status === 200 && res.data.length > 0) {
+        setAllPayslips(res.data);
 
-      if (response.success && response.data.length > 0) {
-        const payslip = response.data[0];
+        // Auto-select first payslip
+        const firstPayslip = res.data[0];
+        setFilteredPayslip(firstPayslip);
+        setEmployeeNumber(String(firstPayslip.EmployeeNumber));
 
-        const earningsData = [
-          { description: "Basic Salary", amount: payslip.BasicSalary },
-          { description: "House Allowance", amount: payslip.HouseAllowance },
-          {
-            description: "Transport Allowance",
-            amount: payslip.TransportAllowance,
-          },
-          { description: "Other Allowances", amount: payslip.OtherAllowances },
-          { description: "Gross Pay", amount: payslip.GrossPay },
-        ];
+        // Extract month and year from SalaryCycleName
+        const cycleName = firstPayslip.SalaryCycleName || "";
+        const monthMatch = cycleName.match(/(January|February|March|April|May|June|July|August|September|October|November|December)/i);
+        const yearMatch = cycleName.match(/\d{4}/);
 
-        const deductionsData = [
-          { description: "PAYE", amount: payslip.PAYE },
-          { description: "NHIF", amount: payslip.NHIF },
-          { description: "NSSF", amount: payslip.NSSF },
-          { description: "Housing Levy", amount: payslip.HousingLevy },
-          { description: "Other Deductions", amount: payslip.OtherDeductions },
-          { description: "Total Deductions", amount: payslip.TotalDeductions },
-        ];
+        if (monthMatch) setMonth(monthMatch[0]);
+        if (yearMatch) setYear(yearMatch[0]);
 
-        setEarnings(earningsData);
-        setDeductions(deductionsData);
-
-        setEmployeeInfo({
-          name: payslip.EmployeeName || "N/A",
-          id: payslip.EmployeeId || "N/A",
-          designation: payslip.Designation || "N/A",
-          branch: payslip.Branch || "N/A",
-          department: payslip.Department || "N/A",
-          bankName: payslip.BankName || "N/A",
-          bankAccount: payslip.BankAccount || "N/A",
-          salaryCycle: payslip.SalaryCycleName || "N/A",
-          createdat: payslip.CreatedAt
-            ? payslip.CreatedAt.split("T")[0]
-            : "N/A",
-          netPay: payslip.NetPay || 0,
-        });
+        displayPayslip(firstPayslip);
       }
     } catch (error) {
-      console.error("Error fetching payslip:", error);
+      console.error("Error fetching payslips:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPayslip();
+    fetchAllPayslips();
   }, []);
 
-  const totalEarnings = earnings.reduce((sum, item) => sum + item.amount, 0);
-  const totalDeductions = deductions.reduce(
-    (sum, item) => sum + item.amount,
-    0
-  );
-  const netPay = totalEarnings - totalDeductions;
+  //comma currency separator
+  const formatCurrency = (amount) => {
+    if (typeof amount !== "number") amount = Number(amount) || 0;
+    return amount.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+
+  // Display payslip data
+  const displayPayslip = (payslip) => {
+    const earningsData = [
+      { description: "Basic Salary", amount: payslip.BasicSalary || 0 },
+      { description: "House Allowance", amount: payslip.HouseAllowance || 0 },
+      { description: "Transport Allowance", amount: payslip.TransportAllowance || 0 },
+      { description: "Other Allowances", amount: payslip.OtherAllowances || 0 },
+    ];
+
+
+    const deductionsData = [
+      { description: "PAYE", amount: payslip.PAYE || 0 },
+      { description: "SHA", amount: payslip.SHA || 0 },
+      { description: "NSSF", amount: payslip.NSSF || 0 },
+      { description: "Housing Levy", amount: payslip.HousingLevy || 0 },
+      { description: "Other Deductions", amount: payslip.OtherDeductions || 0 },
+      { description: "Total Deductions", amount: payslip.TotalDeductions || 0 },
+    ];
+
+    setEarnings(earningsData);
+    setDeductions(deductionsData);
+
+    setEmployeeInfo({
+      name: payslip.EmployeeName || "N/A",
+      id: payslip.EmployeeNumber || "N/A",
+      designation: payslip.Designation || "N/A",
+      branch: payslip.Branch || "N/A",
+      designation: payslip.Designation || "N/A",
+      bankName: payslip.BankName || "N/A",
+      bankAccount: payslip.BankAccount || "N/A",
+      salaryCycle: payslip.SalaryCycleName || "N/A",
+      createdat: payslip.CreatedAt ? payslip.CreatedAt.split("T")[0] : "N/A",
+      netPay: payslip.NetPay || 0,
+    });
+  };
+
+  // Filter payslip based on user input
+  const handleFetchPayslip = () => {
+    if (!employeeNumber) {
+      alert("Please enter a Employee Number to search.");
+      return;
+    }
+
+    const filtered = allPayslips.find((payslip) => {
+      const matchesId = String(payslip.EmployeeNumber) === String(employeeNumber);
+      const cycleName = payslip.SalaryCycleName || "";
+      const matchesMonth = cycleName.toLowerCase().includes(month.toLowerCase());
+      const matchesYear = cycleName.includes(year);
+
+      return matchesId && matchesMonth && matchesYear;
+    });
+
+    if (filtered) {
+      setFilteredPayslip(filtered);
+      displayPayslip(filtered);
+    } else {
+      alert(`No payslip found for Employee ID ${employeeNumber} in ${month} ${year}`);
+      setFilteredPayslip(null);
+      setEarnings([]);
+      setDeductions([]);
+      setEmployeeInfo({});
+    }
+  };
+
+  const totalEarnings = filteredPayslip?.GrossPay || 0;
+  const totalDeductions = filteredPayslip?.TotalDeductions || 0;
+  const netPay = filteredPayslip?.NetPay || 0;
+
 
   // Get the styled HTML content (string) — used for Word/Print window fallback
   const getPayslipHTML = () => {
@@ -361,12 +409,12 @@ export default function Payslip() {
               <div class="company-info">
                 <h1>SWIZZSOFT SYSTEM</h1>
                 <p>Swift.Secure.Soft.Solution</p>
-                <p>📞 +1-15893 Halls 711</p>
-                <p>✉️ info@icompanyframez.com</p>
+                <p>📞 +254 712345678</p>
+                <p>✉️ info@swizzsoft.com</p>
               </div>
             </div>
             <div class="header-right">
-              <p>Morris, North Dakota 58639</p>
+              <p>${employeeInfo.branch || "N/A"}, 58639</p>
               <p class="tax-id">Tax ID: 452429916</p>
             </div>
           </div>
@@ -380,19 +428,19 @@ export default function Payslip() {
               <h3>Employee Details</h3>
               <div class="detail-row">
                 <span class="detail-label">Name:</span>
-                <span class="detail-value">John Andrews</span>
+                <span class="detail-value">${employeeInfo.name}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Employee ID:</span>
-                <span class="detail-value">${memberId}</span>
+                <span class="detail-value">${employeeNumber}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Position:</span>
-                <span class="detail-value">Site Supervisor</span>
+                <span class="detail-value">${employeeInfo.designation}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Department:</span>
-                <span class="detail-value">Construction</span>
+                <span class="detail-label"> Designation:</span>
+                <span class="detail-value">${employeeInfo.designation}</span>
               </div>
             </div>
             <div class="details-section">
@@ -403,7 +451,7 @@ export default function Payslip() {
               </div>
               <div class="detail-row">
                 <span class="detail-label">Pay Date:</span>
-                <span class="detail-value">30-${month}-${year}</span>
+                <span class="detail-value">${employeeInfo.createdat}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Payment Method:</span>
@@ -411,7 +459,7 @@ export default function Payslip() {
               </div>
               <div class="detail-row">
                 <span class="detail-label">Bank Account:</span>
-                <span class="detail-value">****9244</span>
+                <span class="detail-value">${employeeInfo.bankAccount}</span>
               </div>
             </div>
           </div>
@@ -423,20 +471,20 @@ export default function Payslip() {
               <table>
                 <tbody>
                   ${earnings
-                    .map(
-                      (item) => `
+        .map(
+          (item) => `
                     <tr>
                       <td>${item.description}</td>
-                      <td class="amount-cell">$${item.amount.toFixed(2)}</td>
+                      <td class="amount-cell">Ksh. ${item.amount.toFixed(2)}</td>
                     </tr>
                   `
-                    )
-                    .join("")}
+        )
+        .join("")}
                 </tbody>
                 <tfoot>
                   <tr class="total-row">
                     <td class="total-label">Total Earnings</td>
-                    <td class="total-amount">$${totalEarnings.toFixed(2)}</td>
+                    <td class="total-amount">Ksh. ${totalEarnings.toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -446,22 +494,20 @@ export default function Payslip() {
               <table>
                 <tbody>
                   ${deductions
-                    .map(
-                      (item) => `
+        .map(
+          (item) => `
                     <tr>
                       <td>${item.description}</td>
-                      <td class="amount-cell">$${item.amount.toFixed(2)}</td>
+                      <td class="amount-cell">Ksh. ${item.amount.toFixed(2)}</td>
                     </tr>
                   `
-                    )
-                    .join("")}
+        )
+        .join("")}
                 </tbody>
                 <tfoot>
                   <tr class="total-row-red">
                     <td class="total-label">Total Deductions</td>
-                    <td class="total-amount-red">$${totalDeductions.toFixed(
-                      2
-                    )}</td>
+                    <td class="total-amount-red">Ksh. ${totalDeductions.toFixed(2)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -472,7 +518,7 @@ export default function Payslip() {
           <div class="net-pay">
             <div>
               <div class="net-pay-label">Net Pay</div>
-              <div class="net-pay-amount">$${netPay.toFixed(2)}</div>
+              <div class="net-pay-amount">Ksh. ${netPay.toFixed(2)}</div>
             </div>
             <svg class="calendar-icon" fill="currentColor" viewBox="0 0 24 24">
               <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
@@ -494,11 +540,10 @@ export default function Payslip() {
     `;
   };
 
-  // EXPORT: PDF using html2canvas + jsPDF (captures the on-screen container - preserves style)
+  // EXPORT: PDF using html2canvas + jsPDF
   const handleExportPDF = async () => {
     if (!payslipRef.current) return;
     try {
-      // increase scale for better resolution
       const canvas = await html2canvas(payslipRef.current, {
         scale: 2,
         useCORS: true,
@@ -510,7 +555,6 @@ export default function Payslip() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // calculate image dims to fill A4 while preserving aspect
       const imgProps = { width: canvas.width, height: canvas.height };
       const imgRatio = imgProps.width / imgProps.height;
       let imgPDFWidth = pdfWidth;
@@ -524,10 +568,9 @@ export default function Payslip() {
       const y = (pdfHeight - imgPDFHeight) / 2;
 
       pdf.addImage(imgData, "PNG", x, y, imgPDFWidth, imgPDFHeight);
-      pdf.save(`Payslip_${memberId}_${month}_${year}.pdf`);
+      pdf.save(`Payslip_${employeeNumber}_${month}_${year}.pdf`);
     } catch (err) {
       console.error("PDF export error:", err);
-      // fallback to print window
       const printWindow = window.open("", "", "width=800,height=600");
       if (printWindow) {
         printWindow.document.write(getPayslipHTML());
@@ -541,7 +584,7 @@ export default function Payslip() {
     }
   };
 
-  // EXPORT: Word (basic HTML -> .doc approach)
+  // EXPORT: Word
   const handleExportWord = () => {
     const htmlContent = getPayslipHTML();
     const blob = new Blob(["\ufeff" + htmlContent], {
@@ -550,19 +593,19 @@ export default function Payslip() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Payslip_${memberId}_${month}_${year}.doc`;
+    link.download = `Payslip_${employeeNumber}_${month}_${year}.doc`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
   };
 
-  // EXPORT: Excel/CSV (tabular)
+  // EXPORT: Excel/CSV
   const handleExportExcel = () => {
-    let csv = "\ufeff"; // UTF-8 BOM for Excel-friendly CSV
+    let csv = "\ufeff";
     csv += "SWIZZSOFT SYSTEM - PAYSLIP\n";
     csv += `Period: ${month} ${year}\n`;
-    csv += `Employee: John Andrews (${memberId})\n\n`;
+    csv += `Employee: ${employeeInfo.name} (${employeeNumber})\n\n`;
 
     csv += "EARNINGS\n";
     csv += "Description,Amount\n";
@@ -584,14 +627,14 @@ export default function Payslip() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Payslip_${memberId}_${month}_${year}.csv`;
+    link.download = `Payslip_${employeeNumber}_${month}_${year}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
   };
 
-  // PRINT (opens print-ready HTML in new window)
+  // PRINT
   const handlePrint = () => {
     const printWindow = window.open("", "", "width=800,height=600");
     const htmlContent = getPayslipHTML();
@@ -603,20 +646,16 @@ export default function Payslip() {
     setTimeout(() => {
       printWindow.focus();
       printWindow.print();
-      // do not auto-close so user can review print dialog; closing sometimes blocks printing on some browsers
     }, 250);
   };
 
-  // SHARE (navigator.share if available, else copy to clipboard fallback)
+  // SHARE
   const handleShare = async () => {
     try {
       const element = payslipRef.current;
       if (!element) return;
 
-      // Generate image
       const dataUrl = await toPng(element);
-
-      // Convert image → PDF
       const pdf = new jsPDF("p", "mm", "a4");
       const imgProps = pdf.getImageProperties(dataUrl);
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -625,7 +664,6 @@ export default function Payslip() {
 
       const pdfBlob = pdf.output("blob");
 
-      // Try native share
       if (
         navigator.canShare &&
         navigator.canShare({
@@ -644,14 +682,9 @@ export default function Payslip() {
         return;
       }
 
-      // Fallback: WhatsApp Web
       const whatsappUrl = `https://wa.me/?text=Here%20is%20your%20payslip.%20(PDF%20attached%20separately)`;
       window.open(whatsappUrl, "_blank");
 
-      // Fallback: Email
-      window.location.href = `mailto:?subject=Payslip&body=Here is your payslip (PDF attached separately).`;
-
-      // Always save locally as final fallback
       saveAs(pdfBlob, `Payslip.pdf`);
     } catch (err) {
       console.error("Error sharing:", err);
@@ -700,6 +733,7 @@ export default function Payslip() {
             onClick={handleExportPDF}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Export as PDF"
+            disabled={!filteredPayslip}
           >
             <FaFilePdf className="w-5 h-5 text-red-600" />
           </button>
@@ -707,6 +741,7 @@ export default function Payslip() {
             onClick={handleExportWord}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Export as Word"
+            disabled={!filteredPayslip}
           >
             <FaFileWord className="w-5 h-5 text-blue-600" />
           </button>
@@ -714,6 +749,7 @@ export default function Payslip() {
             onClick={handleExportExcel}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Export as Excel/CSV"
+            disabled={!filteredPayslip}
           >
             <FaFileExcel className="w-5 h-5 text-green-600" />
           </button>
@@ -721,6 +757,7 @@ export default function Payslip() {
             onClick={handlePrint}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Print"
+            disabled={!filteredPayslip}
           >
             <Printer className="w-5 h-5 text-gray-700" />
           </button>
@@ -728,6 +765,7 @@ export default function Payslip() {
             onClick={handleShare}
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title="Share"
+            disabled={!filteredPayslip}
           >
             <Share2 className="w-5 h-5 text-gray-700" />
           </button>
@@ -743,6 +781,17 @@ export default function Payslip() {
           {loading ? (
             <div className="text-center py-20 text-gray-500">
               Loading payslip...
+            </div>
+          ) : !filteredPayslip ? (
+            <div className="text-center py-20">
+              <img
+                src={NotFoundImage}
+                alt="Not Found"
+                className="mx-auto w-48 h-auto mb-4"
+              />
+              <p className="text-gray-500 font-medium">
+                No payslip selected. Please use the filter to find a payslip.
+              </p>
             </div>
           ) : (
             <>
@@ -770,7 +819,7 @@ export default function Payslip() {
 
                 <div className="text-right">
                   <p className="text-sm text-gray-600">
-                    {`${employeeInfo.branch}, 58639`}
+                    {employeeInfo.branch || "N/A"}, 58639
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Tax ID: 452429916
@@ -780,8 +829,7 @@ export default function Payslip() {
 
               {/* Title */}
               <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">
-                PAYSLIP:{" "}
-                {`${employeeInfo.salaryCycle} PAYSLIP`}
+                PAYSLIP: {employeeInfo.salaryCycle}
               </h2>
 
               {/* Employee Info & Pay Period */}
@@ -806,9 +854,9 @@ export default function Payslip() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Department:</span>
+                      <span className="text-gray-600">Designation:</span>
                       <span className="font-semibold">
-                        {employeeInfo.department || "N/A"}
+                        {employeeInfo.designation || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -828,14 +876,16 @@ export default function Payslip() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Pay Date:</span>
                       <span className="font-semibold">
-                        {new Date(employeeInfo.createdat).toLocaleDateString(
-                          "en-GB",
-                          {
-                            day: "2-digit",
-                            month: "long",
-                            year: "numeric",
-                          }
-                        )}
+                        {employeeInfo.createdat !== "N/A"
+                          ? new Date(employeeInfo.createdat).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )
+                          : "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -844,7 +894,9 @@ export default function Payslip() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Bank Account:</span>
-                      <span className="font-semibold">{`${employeeInfo.bankAccount}`}</span>
+                      <span className="font-semibold">
+                        {employeeInfo.bankAccount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -876,7 +928,7 @@ export default function Payslip() {
                           Total Earnings
                         </td>
                         <td className="p-3 text-right font-bold text-green-700">
-                          Ksh. {totalEarnings.toFixed(2)}
+                          Ksh. {formatCurrency(totalEarnings.toFixed(2))}
                         </td>
                       </tr>
                     </tfoot>
@@ -896,7 +948,7 @@ export default function Payslip() {
                             {item.description}
                           </td>
                           <td className="p-3 text-right text-sm font-semibold text-gray-800">
-                            Ksh. {item.amount.toFixed(2)}
+                            Ksh. {formatCurrency(item.amount.toFixed(2))}
                           </td>
                         </tr>
                       ))}
@@ -907,7 +959,7 @@ export default function Payslip() {
                           Total Deductions
                         </td>
                         <td className="p-3 text-right font-bold text-red-700">
-                          Ksh. {totalDeductions.toFixed(2)}
+                          Ksh. {formatCurrency(totalDeductions.toFixed(2))}
                         </td>
                       </tr>
                     </tfoot>
@@ -921,7 +973,7 @@ export default function Payslip() {
                   <div>
                     <p className="text-sm opacity-90">Net Pay</p>
                     <p className="text-4xl font-bold mt-1">
-                      Ksh. {netPay.toFixed(2)}
+                      Ksh. {formatCurrency(netPay.toFixed(2))}
                     </p>
                   </div>
                   <Calendar className="w-16 h-16 opacity-50" />
@@ -949,18 +1001,18 @@ export default function Payslip() {
       </div>
 
       {/* Floating Filter Card */}
-      <div className="no-print fixed top-1/2 right-2 transform -translate-y-1/2 bg-white shadow-lg border rounded-lg w-52 p-6 z-50">
+      <div className="no-print fixed top-1/2 right-2 transform -translate-y-1/2 bg-white shadow-lg border rounded-lg w-54 p-6 z-50">
         <h3 className="font-semibold text-gray-700 mb-4">Filter Payslip</h3>
 
-        <label className="text-sm text-gray-600">Member ID</label>
+        <label className="text-sm text-gray-600 block mb-1">Employee ID</label>
         <input
-          value={memberId}
-          onChange={(e) => setMemberId(e.target.value)}
+          value={employeeNumber}
+          onChange={(e) => setEmployeeNumber(e.target.value)}
           className="w-full border rounded px-3 py-2 text-sm mb-4"
-          placeholder="Enter Member ID"
+          placeholder="Enter Employee ID"
         />
 
-        <label className="text-sm text-gray-600">Year</label>
+        <label className="text-sm text-gray-600 block mb-1">Year</label>
         <select
           value={year}
           onChange={(e) => setYear(e.target.value)}
@@ -971,7 +1023,7 @@ export default function Payslip() {
           <option>2023</option>
         </select>
 
-        <label className="text-sm text-gray-600">Month</label>
+        <label className="text-sm text-gray-600 block mb-1">Month</label>
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
@@ -994,12 +1046,50 @@ export default function Payslip() {
             <option key={m}>{m}</option>
           ))}
         </select>
+
         <button
-          onClick={fetchPayslip}
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors"
+          onClick={handleFetchPayslip}
+          disabled={loading}
+          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors disabled:bg-gray-400"
         >
           {loading ? "Loading..." : "Fetch Payslip"}
         </button>
+
+        {/* Available Payslips Info */}
+        {allPayslips.length > 0 && (
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-xs text-gray-500 mb-2">
+              Available Payslips ({allPayslips.length}):
+            </p>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {allPayslips.map((payslip, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs bg-gray-50 p-2 rounded cursor-pointer hover:bg-gray-100"
+                  onClick={() => {
+                    setEmployeeNumber(String(payslip.EmployeeNumber));
+                    const cycleName = payslip.SalaryCycleName || "";
+                    const monthMatch = cycleName.match(
+                      /(January|February|March|April|May|June|July|August|September|October|November|December)/i
+                    );
+                    const yearMatch = cycleName.match(/\d{4}/);
+                    if (monthMatch) setMonth(monthMatch[0]);
+                    if (yearMatch) setYear(yearMatch[0]);
+                    setFilteredPayslip(payslip);
+                    displayPayslip(payslip);
+                  }}
+                >
+                  <p className="font-semibold text-gray-700">
+                    {payslip.EmployeeName}
+                  </p>
+                  <p className="text-gray-500">
+                    ID: {payslip.EmployeeNumber} - {payslip.SalaryCycleName}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

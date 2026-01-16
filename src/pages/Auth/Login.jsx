@@ -156,8 +156,12 @@
 // src/pages/Login.jsx
 import React from "react";
 import { FaGoogle, FaApple } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Login() {
+  const navigate = useNavigate();
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Left Section */}
@@ -319,9 +323,12 @@ export default function Login() {
             <button
               type="submit"
               className="w-full bg-[#6B4EFF] hover:bg-[#5b3cd8] text-white py-2 rounded-md font-medium"
+            //onClick={() => navigate("/")}
             >
               Login
             </button>
+
+
           </form>
 
           <div className="my-6 flex items-center justify-center">

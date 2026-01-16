@@ -147,6 +147,10 @@ import { Button } from "@/components/ui/button";
 import { FaChevronDown, FaChevronUp, FaBuilding } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "../../../assets/adra.png";
+
 
 export default function PartiallyReceived() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -232,6 +236,109 @@ export default function PartiallyReceived() {
     });
   };
 
+
+  const downloadPDF = (po) => {
+    const doc = new jsPDF("p", "pt", "a4");
+
+    const green = "#0a6b3c";
+
+    // ---------------------------
+    // HEADER (Logo + Title)
+    // ---------------------------
+    doc.addImage(logo, "PNG", 15, 10, 80, 80);
+
+    doc.setFillColor(green);
+    doc.rect(100, 40, 500, 50, "F");
+
+    doc.setFontSize(16);
+    doc.setTextColor("#FFFFFF");
+    doc.text("PARTIALLY RECEIVED PURCHASE ORDER", 180, 70);
+
+    // ---------------------------
+    // DETAILS LEFT
+    // ---------------------------
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("Purchase Order Details:", 40, 140);
+
+    doc.setTextColor("#000");
+    doc.setFontSize(12);
+    doc.text(`PO Number: ${po.PONumber}`, 40, 160);
+    doc.text(`Supplier: ${po.SupplierName}`, 40, 180);
+    doc.text(
+      `Order Date: ${new Date(po.OrderDate).toLocaleDateString()}`,
+      40,
+      200
+    );
+    doc.text(`Status: ${po.Status}`, 40, 220);
+    doc.text(
+      `Total Amount: ${po.Currency} ${po.TotalAmount.toLocaleString()}`,
+      40,
+      240
+    );
+
+    // ---------------------------
+    // DETAILS RIGHT
+    // ---------------------------
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("Procurement Officer:", 300, 140);
+
+    doc.setFontSize(12);
+    doc.setTextColor("#000");
+    doc.text("Procurement Department", 300, 160);
+    doc.text("ADRA Kenya", 300, 180);
+
+    // ---------------------------
+    // TABLE
+    // ---------------------------
+    if (po.Lines && po.Lines.length > 0) {
+      const tableData = po.Lines.map((line) => [
+        line.ItemDescription,
+        line.QuantityOrdered,
+        line.Unit,
+        `${po.Currency} ${line.UnitPrice.toLocaleString()}`,
+        `${po.Currency} ${(line.QuantityOrdered * line.UnitPrice).toLocaleString()}`,
+      ]);
+
+      autoTable(doc, {
+        startY: 280,
+        headStyles: {
+          fillColor: green,
+          textColor: "#fff",
+          halign: "center",
+        },
+        head: [["Description", "Qty", "Unit", "Unit Price", "Total"]],
+        body: tableData,
+        styles: { fontSize: 11 },
+        columnStyles: {
+          1: { halign: "center" },
+          2: { halign: "center" },
+          3: { halign: "right" },
+          4: { halign: "right" },
+        },
+      });
+    }
+
+    // ---------------------------
+    // FOOTER
+    // ---------------------------
+    const finalY = doc.lastAutoTable.finalY + 60;
+    doc.setTextColor(green);
+    doc.setFontSize(14);
+    doc.text("Thank you for your collaboration.", 200, finalY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      "This document is confidential and intended solely for the recipient. Unauthorized sharing or duplication is prohibited.",
+      50, finalY + 15,
+    );
+
+    doc.save(`PartiallyReceived_${po.PONumber}.pdf`);
+  };
+
+
   return (
     <div className="bg-white py-8 rounded-lg">
       <div className="bg-gray-200 p-4 rounded-sm">
@@ -291,6 +398,16 @@ export default function PartiallyReceived() {
                     >
                       Convert to Fully Received
                     </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-green-600 text-white hover:bg-green-700"
+                      onClick={() => downloadPDF(po)}
+                    >
+                      Download PDF
+                    </Button>
+
                     <Button
                       size="sm"
                       variant="outline"

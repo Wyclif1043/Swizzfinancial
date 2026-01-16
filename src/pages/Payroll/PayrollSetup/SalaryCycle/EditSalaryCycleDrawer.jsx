@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateSalaryCycle } from "../../../../apis/employeesapi/SalaryCycleApis";
 import Swal from "sweetalert2";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 
 export default function EditSalaryCycle({ open, onClose, onSuccess, cycle }) {
   const currentYear = new Date().getFullYear();
@@ -56,7 +56,7 @@ export default function EditSalaryCycle({ open, onClose, onSuccess, cycle }) {
     };
 
     try {
-      await updateSalaryCycle(payload.id, payload); 
+      await payrollsetupApiConfig.put(`/salary-cycles/${payload.id}`, payload);
       Swal.fire("Success", "Salary Cycle updated successfully!", "success");
       onSuccess?.();
       onClose();

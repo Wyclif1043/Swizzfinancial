@@ -8,9 +8,13 @@ import {
   FaChevronUp,
   FaCheckCircle,
   FaTimesCircle,
+  FaFilePdf,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "../../../assets/adra.png";
 
 export default function PendingApproval() {
   const [requisitions, setRequisitions] = useState([]);
@@ -79,6 +83,158 @@ export default function PendingApproval() {
     }
   };
 
+
+  const downloadPDF = (req) => {
+    const doc = new jsPDF("p", "pt", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // ADRA Green
+    const green = [0, 77, 64];
+
+    /* ----------------------------------------
+         HEADER: Logo + Large Title Banner
+    ----------------------------------------- */
+    doc.addImage(logo, "PNG", 40, 30, 40, 40);
+
+    doc.setFillColor(...green);
+    doc.rect(40, 90, pageWidth - 80, 50, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text("Pending Requisitions", pageWidth / 2, 122, {
+      align: "center",
+    });
+
+    /* ----------------------------------------
+         RFQ TO / FROM — Bigger & Cleaner
+    ----------------------------------------- */
+    const leftX = 40;
+    const rightX = pageWidth / 2 + 20;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...green);
+
+    doc.text("Requisitions To:", leftX, 170);
+    doc.text("Requisitions From:", rightX, 170);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+
+    // LEFT BLOCK
+    doc.text(req.VendorName || "Vendor Name", leftX, 190);
+    doc.text(req.DepartmentName || "Department", leftX, 210);
+    doc.text(req.SupplierAddress || "Address", leftX, 230);
+
+    // RIGHT BLOCK
+    doc.text("ADRA Kenya", rightX, 190);
+    doc.text("Procurement Department", rightX, 210);
+    doc.text("www.adrakenya.org", rightX, 230);
+
+    /* ----------------------------------------
+         TABLE — Enlarged + Clean Styling
+    ----------------------------------------- */
+    const tableData = req.Lines.map((line) => [
+      line.ItemDescription,
+      line.Quantity,
+      line.Unit || "",
+      `Ksh ${(line.Quantity * line.UnitPrice).toFixed(2)}`,
+    ]);
+
+    autoTable(doc, {
+      startY: 270,
+      head: [["Item Description", "Quantity", "Unit", "Amount (KES)"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: {
+        fillColor: green,
+        textColor: "#FFFFFF",
+        fontSize: 12,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      styles: {
+        fontSize: 11,
+        cellPadding: 6,
+      },
+      columnStyles: {
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "right" },
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 30;
+
+    /* ----------------------------------------
+         RFQ SUMMARY SECTION — Larger & Cleaner
+    ----------------------------------------- */
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Requisitions Summary", 40, finalY);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Requisition No:    ${req.RequisitionNumber}`, 40, finalY + 25);
+    doc.text(`Vendor Name:       ${req.VendorName}`, 40, finalY + 45);
+    doc.text(`Department:        ${req.DepartmentName}`, 40, finalY + 65);
+    doc.text(`Status:            ${req.Status}`, 40, finalY + 85);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(
+      `Total Amount: Ksh ${req.TotalAmount.toLocaleString()}`,
+      40,
+      finalY + 120
+    );
+
+    /* ----------------------------------------
+         SIDE GREEN BOX — Larger & Cleaner
+    ----------------------------------------- */
+    doc.setFillColor(...green);
+    doc.rect(pageWidth - 220, finalY - 10, 180, 100, "F");
+
+    /* ----------------------------------------
+         THANK YOU — Bigger + Centered
+    ----------------------------------------- */
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...green);
+    doc.text(
+      "Thank you for your collaboration.",
+      pageWidth / 2,
+      finalY + 180,
+      { align: "center" }
+    );
+
+    /* ----------------------------------------
+         DISCLAIMER FOOTER — Centered
+    ----------------------------------------- */
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      "This document is confidential and intended solely for the recipient. Unauthorized sharing or duplication is prohibited.",
+      pageWidth / 2,
+      finalY + 210,
+      { align: "center", maxWidth: pageWidth - 80 }
+    );
+
+    /* ----------------------------------------
+         SAVE FILE
+    ----------------------------------------- */
+    doc.save(`Requisitions_${req.RequisitionNumber}.pdf`);
+  };
+
+
+
+
+
+
+
   return (
     <div className="bg-white py-8 rounded-lg">
       {/* Table */}
@@ -113,7 +269,7 @@ export default function PendingApproval() {
                 className="bg-white rounded-lg shadow-lg border relative"
               >
                 {/* Row */}
-                <div className="grid grid-cols-9 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                <div className="grid grid-cols-10 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                   <span className="font-medium text-indigo-700 col-span-2">
                     {req.RequisitionNumber}
                   </span>
@@ -128,7 +284,16 @@ export default function PendingApproval() {
                   </span>
                   <span className="font-semibold">Ksh {req.TotalAmount}</span>
 
-                  <div className="flex gap-2 justify-end col-span-2 relative">
+                  <div className="flex gap-2 justify-end col-span-3 relative">
+                    {/* ✅ Download PDF */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-gray-600 text-white hover:bg-gray-700"
+                      onClick={() => downloadPDF(req)}
+                    >
+                      <FaFilePdf className="mr-2" /> PDF
+                    </Button>
                     {/* Action dropdown button */}
                     <div className="relative">
                       <Button

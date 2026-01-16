@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createEarning } from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
@@ -15,13 +16,16 @@ export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
     amount: "",
   });
   const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [earningCodes, setEarningCodes] = useState([]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await createEarning(formData);
+      const res = await payrollsetupApiConfig.post("/employee-earnings", formData);
       if (res.status !== 201 && res.status !== 200)
         throw new Error("Failed to add Earning");
 
@@ -44,6 +48,39 @@ export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (open) {
+      fetchEmployees();
+      fetchEarningCodes();
+    }
+  }, [open]);
+
+
+  const fetchEmployees = async () => {
+    try {
+      const res = await fetch("https://186c1c091b40.ngrok-free.app/api/employee-profiles", {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const json = await res.json();
+      setEmployees(json.data || []);
+    } catch (error) {
+      console.error("Failed to load employees", error);
+    }
+  };
+
+  const fetchEarningCodes = async () => {
+    try {
+      const res = await fetch("https://186c1c091b40.ngrok-free.app/api/account-details/taxable-earnings", {
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      const json = await res.json();
+      setEarningCodes(json.data || []);
+    } catch (error) {
+      console.error("Failed to load earning codes", error);
+    }
+  };
+
 
   return (
     <AnimatePresence>
@@ -76,29 +113,45 @@ export default function AddEmployeeEarnings({ open, onClose, onSuccess }) {
             <div className="p-3 flex-1">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Employee Number</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter Employee Number"
+                  <Label>Employee</Label>
+                  <select
+                    className="w-full border rounded-md p-2"
                     value={formData.employeeNumber}
                     onChange={(e) =>
                       setFormData({ ...formData, employeeNumber: e.target.value })
                     }
                     required
-                  />
+                  >
+                    <option value="">-- Select Employee --</option>
+
+                    {employees.map((emp) => (
+                      <option key={emp.EmployeeNumber} value={emp.EmployeeNumber}>
+                        {emp.Name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
                   <Label>Earning Code</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter Earning Code"
+                  <select
+                    className="w-full border rounded-md p-2"
                     value={formData.earningCode}
                     onChange={(e) =>
                       setFormData({ ...formData, earningCode: e.target.value })
                     }
                     required
-                  />
+                  >
+                    <option value="">-- Select Earning --</option>
+
+                    {earningCodes.map((item) => (
+                      <option key={item.Code} value={item.Code}>
+                        {item.Name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
                 <div>
                   <Label>Start Date</Label>
                   <Input

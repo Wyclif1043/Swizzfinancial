@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
-import { updateDeduction } from "../../../../../apis/employeesapi/EmployeeDeductionsAPI's";
 
 export default function EditEmployeeDeductions({ open, onClose, onSuccess, deduction }) {
   const [formData, setFormData] = useState({
@@ -51,7 +51,7 @@ export default function EditEmployeeDeductions({ open, onClose, onSuccess, deduc
 
       console.debug("EDIT DEDUCTION PAYLOAD", payload);
 
-      const res = await updateDeduction(payload.id, payload);
+      const res = await payrollsetupApiConfig.put(`/employee-deductions/${payload.id}`, payload);
 
       if (![200, 201, 204].includes(res.status)) {
         throw new Error(`Unexpected status ${res.status}`);

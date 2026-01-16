@@ -9,14 +9,11 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { FaDollarSign, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import {
-  getEarnings,
-  deleteEarning,
-} from "../../../../../apis/employeesapi/EmployeeEarningsAPI's";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import AddEmployeeEarnings from "./AddEmployeeEarnings";
 import EditEmployeeEarnings from "./EditEmployeeEarnings";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 
 export default function EmployeeEarnings() {
   const [earnings, setEarnings] = useState([]);
@@ -35,16 +32,16 @@ export default function EmployeeEarnings() {
 
   // Fetch earnings
   const fetchEarnings = async () => {
-  try {
-    setLoading(true);
-    const res = await getEarnings();
-    setEarnings(res.data?.data || []); 
-  } catch (error) {
-    console.error("Error fetching earnings:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      const res = await payrollsetupApiConfig.get("/employee-earnings");
+      setEarnings(res.data?.data || []);
+    } catch (error) {
+      console.error("Error fetching earnings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchEarnings();
@@ -63,7 +60,7 @@ export default function EmployeeEarnings() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await deleteEarning(id);
+          const res = await payrollsetupApiConfig.delete(`/employee-earnings/${id}`);
           if (res.status !== 200) throw new Error("Failed to delete earning");
           Swal.fire("Deleted!", "Earning has been deleted.", "success");
           fetchEarnings();
@@ -170,12 +167,13 @@ export default function EmployeeEarnings() {
 
       {/* Table */}
       <div className="bg-gray-200 p-4 rounded-sm">
-        <div className="grid grid-cols-6 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+        <div className="grid grid-cols-8 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
           <span>Employee No</span>
           <span>Earning Code</span>
           <span>Amount</span>
           <span>Start Date</span>
           <span>End Date</span>
+          <span>DebitCredit</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -200,7 +198,7 @@ export default function EmployeeEarnings() {
             {paginatedEarnings.map((earning) => (
               <div
                 key={earning.Id}
-                className="grid grid-cols-6 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
+                className="grid grid-cols-7 gap-4 items-center bg-white py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all border"
               >
                 <span className="font-medium text-indigo-700">
                   {earning.EmployeeNumber}
@@ -215,6 +213,7 @@ export default function EmployeeEarnings() {
                     ? new Date(earning.EndDate).toLocaleDateString()
                     : "Ongoing"}
                 </span>
+                <span>{earning.DebitCredit || 0}</span>
 
                 <div className="flex justify-end gap-2">
                   <Button

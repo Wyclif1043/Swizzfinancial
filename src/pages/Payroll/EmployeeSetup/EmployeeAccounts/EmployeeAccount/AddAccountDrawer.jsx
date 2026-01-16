@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { createAccount } from "../../../../../apis/employeesapi/EmployeeAccountingAPI'S";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddAccountDrawer({ open, onClose, onSuccess }) {
@@ -21,7 +21,7 @@ export default function AddAccountDrawer({ open, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      const res = await createAccount(formData);
+      const res = await payrollsetupApiConfig.post("/account-details", formData);
       if (res.status !== 201 && res.status !== 200)
         throw new Error("Failed to add Account");
 

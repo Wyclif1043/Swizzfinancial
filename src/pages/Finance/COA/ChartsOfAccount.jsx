@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import AccountDrawer from "./AccountDrawer";
 import AddAccountDrawer from "./AddAccountDrawer";
 import NotFoundImage from "/assets/scopefinding.png";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 export default function ChartOfAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -55,6 +58,8 @@ export default function ChartOfAccounts() {
       results = results.filter((acc) => acc.TypeDescription === selectedCategory);
     }
 
+
+
     if (searchTerm.trim() !== "") {
       const search = searchTerm.toLowerCase();
       results = results.filter(
@@ -81,6 +86,59 @@ export default function ChartOfAccounts() {
     setDrawerOpen(true);
   };
 
+  const handlePrintPDF = () => {
+    const doc = new jsPDF("p", "mm", "a4");
+
+    const title = `Chart of Accounts - ${selectedCategory}`;
+    const date = new Date().toLocaleString();
+
+    doc.setFontSize(14);
+    doc.text(title, 14, 15);
+
+    doc.setFontSize(9);
+    doc.text(`Generated on: ${date}`, 14, 22);
+
+    const tableData = filteredAccounts.map((acc) => [
+      new Date(acc.CreatedDate).toLocaleDateString(),
+      acc.Code,
+      acc.Description,
+      acc.TypeDescription,
+      acc.Balance.toLocaleString("en-US", {
+        style: "currency",
+        currency: "KES",
+      }),
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [["Date", "Code", "Description", "Type", "Balance"]],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [79, 70, 229], // Indigo
+        textColor: 255,
+      },
+      columnStyles: {
+        4: { halign: "right" },
+      },
+      didDrawPage: (data) => {
+        doc.setFontSize(8);
+        doc.text(
+          `Page ${doc.internal.getNumberOfPages()}`,
+          data.settings.margin.left,
+          doc.internal.pageSize.height - 10
+        );
+      },
+    });
+
+    doc.save(`Chart_of_Accounts_${selectedCategory}.pdf`);
+  };
+
+
+
   return (
     <div className="flex h-screen bg-gray-100 relative overflow-hidden">
       {/* Sidebar */}
@@ -91,42 +149,39 @@ export default function ChartOfAccounts() {
         <div className="space-y-3 overflow-y-auto h-[calc(100vh-100px)] bg-gray-200 p-3 rounded-lg">
           {loading
             ? Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-12 bg-gray-300 rounded animate-pulse"
-                />
-              ))
+              <div
+                key={i}
+                className="h-12 bg-gray-300 rounded animate-pulse"
+              />
+            ))
             : categories.map((cat) => (
-                <Card
-                  key={cat}
-                  className={`cursor-pointer border ${
-                    selectedCategory === cat
-                      ? "bg-blue-700 shadow-md"
-                      : "hover:shadow-sm"
+              <Card
+                key={cat}
+                className={`cursor-pointer border ${selectedCategory === cat
+                  ? "bg-blue-700 shadow-md"
+                  : "hover:shadow-sm"
                   }`}
-                  onClick={() => setSelectedCategory(cat)}
-                >
-                  <CardContent className="p-3">
-                    <p
-                      className={`font-bold ${
-                        selectedCategory === cat ? "text-gray-100" : "text-gray-800"
+                onClick={() => setSelectedCategory(cat)}
+              >
+                <CardContent className="p-3">
+                  <p
+                    className={`font-bold ${selectedCategory === cat ? "text-gray-100" : "text-gray-800"
                       }`}
-                    >
-                      {cat}
-                    </p>
-                    <p
-                      className={`text-xs ${
-                        selectedCategory === cat ? "text-gray-100" : "text-gray-500"
+                  >
+                    {cat}
+                  </p>
+                  <p
+                    className={`text-xs ${selectedCategory === cat ? "text-gray-100" : "text-gray-500"
                       }`}
-                    >
-                      {cat === "All Accounts"
-                        ? accounts.length
-                        : accounts.filter((acc) => acc.TypeDescription === cat).length}{" "}
-                      accounts
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+                  >
+                    {cat === "All Accounts"
+                      ? accounts.length
+                      : accounts.filter((acc) => acc.TypeDescription === cat).length}{" "}
+                    accounts
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       </div>
 
@@ -135,12 +190,41 @@ export default function ChartOfAccounts() {
         {/* Header */}
         <div className="flex items-center justify-between bg-white px-6 py-4 border-b">
           <h2 className="text-lg font-bold">{selectedCategory}</h2>
-          <Button
-            className="bg-blue-500 hover:bg-blue-600"
-            onClick={() => setAddDrawerOpen(true)}
-          >
-            Add Chart Of Account
-          </Button>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Search by code or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-80 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {searchTerm && (
+              <Button
+                variant="outline"
+                onClick={() => setSearchTerm("")}
+              >
+                Clear
+              </Button>
+            )}
+
+            <Button
+              className="bg-red-600 text-white hover:text-white hover:bg-red-400"
+              variant="outline"
+              onClick={handlePrintPDF}
+            >
+              PDF
+            </Button>
+
+
+
+            <Button
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={() => setAddDrawerOpen(true)}
+            >
+              Add Chart Of Account
+            </Button>
+          </div>
+
         </div>
 
         {/* Account table */}
@@ -161,57 +245,55 @@ export default function ChartOfAccounts() {
           <div className="mt-3 space-y-3">
             {loading
               ? Array.from({ length: itemsPerPage }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center rounded-lg px-4 py-3 bg-gray-300 animate-pulse"
-                  >
-                    <div className="w-28 h-4 bg-gray-200 rounded"></div>
-                    <div className="w-24 h-4 bg-gray-200 rounded mx-2"></div>
-                    <div className="flex-1 h-4 bg-gray-200 rounded mx-2"></div>
-                    <div className="w-40 h-4 bg-gray-200 rounded mx-2"></div>
-                    <div className="w-32 h-4 bg-gray-200 rounded ml-2"></div>
-                  </div>
-                ))
+                <div
+                  key={i}
+                  className="flex items-center rounded-lg px-4 py-3 bg-gray-300 animate-pulse"
+                >
+                  <div className="w-28 h-4 bg-gray-200 rounded"></div>
+                  <div className="w-24 h-4 bg-gray-200 rounded mx-2"></div>
+                  <div className="flex-1 h-4 bg-gray-200 rounded mx-2"></div>
+                  <div className="w-40 h-4 bg-gray-200 rounded mx-2"></div>
+                  <div className="w-32 h-4 bg-gray-200 rounded ml-2"></div>
+                </div>
+              ))
               : paginatedData.map((acc) => (
-                  <div
-                    key={acc.Id}
-                    onClick={() => handleRowClick(acc)}
-                    className={`flex items-center rounded-lg px-4 py-3 shadow-md cursor-pointer transition-all ${
-                      activeRowId === acc.Id
-                        ? "bg-blue-500 text-white shadow-lg"
-                        : "bg-white hover:shadow-lg hover:scale-[1.04] hover:bg-blue-500 hover:text-white"
+                <div
+                  key={acc.Id}
+                  onClick={() => handleRowClick(acc)}
+                  className={`flex items-center rounded-lg px-4 py-3 shadow-md cursor-pointer transition-all ${activeRowId === acc.Id
+                    ? "bg-blue-500 text-white shadow-lg"
+                    : "bg-white hover:shadow-lg hover:scale-[1.04] hover:bg-blue-500 hover:text-white"
                     }`}
-                  >
-                    <div className="w-28">
-                      {new Date(acc.CreatedDate).toLocaleDateString()}
-                    </div>
-                    <div className="w-24">{acc.Code}</div>
-                    <div className="flex-1 break-words">{acc.Description}</div>
-                    <div className="w-40">{acc.TypeDescription}</div>
-                    <div
-                      className={`w-32 text-right font-semibold text-xs ${
-                        acc.Balance >= 0 ? "text-green-600" : "text-red-500"
-                      }`}
-                    >
-                      {acc.Balance.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "ksh",
-                      })}
-                    </div>
+                >
+                  <div className="w-28">
+                    {new Date(acc.CreatedDate).toLocaleDateString()}
                   </div>
-                ))}
+                  <div className="w-24">{acc.Code}</div>
+                  <div className="flex-1 break-words">{acc.Description}</div>
+                  <div className="w-40">{acc.TypeDescription}</div>
+                  <div
+                    className={`w-32 text-right font-semibold text-xs ${acc.Balance >= 0 ? "text-green-600" : "text-red-500"
+                      }`}
+                  >
+                    {acc.Balance.toLocaleString("en-US", {
+                      style: "currency",
+                      currency: "ksh",
+                    })}
+                  </div>
+                </div>
+              ))}
           </div>
 
           {/* Empty state */}
           {!loading && filteredAccounts.length === 0 && (
             <div className="text-gray-500 text-center mt-4">
-            <img
-              src={NotFoundImage}
-              alt="Not Found"
-              className="mx-auto w-42 h-auto"
-            />
-            <p className="font-medium text-gray-400"> No accounts found for {selectedCategory}.</p>
-          </div>
+              <img
+                src={NotFoundImage}
+                alt="Not Found"
+                className="mx-auto w-42 h-auto"
+              />
+              <p className="font-medium text-gray-400"> No accounts found for {selectedCategory}.</p>
+            </div>
           )}
 
           {/* Pagination Controls */}

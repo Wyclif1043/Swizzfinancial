@@ -11,8 +11,8 @@ import {
 import { FaUsers, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
-import getEmployees from "../../../../apis/employeesapi/GetEmployees";
-import OnboardEmployeeModal from "./OnboardEmployeeModal";
+import OnboardEmployeeDrawer from "./OnboardEmployeeDrawer";
+import payrollsetupApiConfig from "../../../../apis/payrollsetup/payrollsetupApiConfig";
 // import AddEmployeeDrawer from "./AddEmployeeDrawer";
 // import EditEmployeeDrawer from "./EditEmployeeDrawer";
 
@@ -36,8 +36,8 @@ export default function Employees() {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const data = await getEmployees();
-      setEmployees(data || []);
+      const data  = await payrollsetupApiConfig.get("/employee-profiles");
+      setEmployees(data.data?.data || []);
     } catch (err) {
       console.error("Error fetching employees:", err);
     } finally {
@@ -46,7 +46,6 @@ export default function Employees() {
   };
 
   useEffect(() => {
-    console.log("Fetching employees...");
     fetchEmployees();
   }, []);
 
@@ -63,8 +62,7 @@ export default function Employees() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          // 🔽 replace with actual API call
-          console.log("Delete employee:", empNo);
+          await payrollsetupApiConfig.delete(`/employee-profiles/${empNo}`);
           Swal.fire("Deleted!", "Employee has been removed.", "success");
           fetchEmployees();
         } catch (err) {
@@ -101,7 +99,7 @@ export default function Employees() {
           onClick={() => setIsModalOpen(true)}
           className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
         >
-          <FaPlus /> Onboard New Employee
+          <FaPlus /> Onboard New 
         </Button>
       </div>
 
@@ -234,18 +232,18 @@ export default function Employees() {
         </div>
       )}
 
-      <OnboardEmployeeModal
-        isOpen={isModalOpen}
+      <OnboardEmployeeDrawer
+        open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onEmployeeCreated={() => {
-          setIsModalOpen(false);
-          fetchEmployees();
-        }}
+        onSuccess={fetchEmployees}
       />
 
-      {/* Drawers (if you have them) */}
-      {/* <AddEmployeeDrawer open={openAdd} onClose={() => setOpenAdd(false)} onSuccess={fetchEmployees} /> */}
-      {/* <EditEmployeeDrawer open={openEdit} onClose={() => setOpenEdit(false)} onSuccess={fetchEmployees} employee={selectedEmployee} /> */}
+      {/* <EditEmployeeDrawer
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        onSuccess={fetchEmployees}
+        employee={selectedEmployee}
+      /> */}
     </div>
   );
 }

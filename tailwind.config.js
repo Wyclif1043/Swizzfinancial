@@ -24,4 +24,8 @@ export default {
   plugins: [
     require("flowbite/plugin")
   ],
+  // 👇this disables oklch colors
+  future: {
+    disableColorFunction: true,
+  },
 }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createDeduction } from "../../../../../apis/employeesapi/EmployeeDeductionsAPI's";
+import payrollsetupApiConfig from "../../../../../apis/payrollsetup/payrollsetupApiConfig";
 import Swal from "sweetalert2";
 
 export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
@@ -30,7 +30,7 @@ export default function AddEmployeeDeductions({ open, onClose, onSuccess }) {
         amount: Number(formData.amount),
       };
 
-      const res = await createDeduction(payload);
+      const res = await payrollsetupApiConfig.post("/employee-deductions", payload);
       if (![200, 201].includes(res.status)) {
         throw new Error("Failed to add Deduction");
       }
