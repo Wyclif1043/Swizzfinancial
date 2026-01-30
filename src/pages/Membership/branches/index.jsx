@@ -10,6 +10,8 @@ import {
     FaChevronUp,
     FaEllipsisV,
     FaMapMarkerAlt,
+    FaSearch,
+    FaFilter,
 } from "react-icons/fa";
 
 import {
@@ -26,15 +28,36 @@ import EditBranch from "./EditBranch";
 
 export default function Branches() {
     const [branches, setBranches] = useState([]);
+    const [filteredBranches, setFilteredBranches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedBranch, setExpandedBranch] = useState(null);
     const [openEdit, setOpenEdit] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState(null);
     const [openBranch, setOpenBranch] = useState(false);
+    
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState("");
+    const [companyFilter, setCompanyFilter] = useState("all");
+    const [sortBy, setSortBy] = useState("name");
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [showFilters, setShowFilters] = useState(false);
+    const [uniqueCompanies, setUniqueCompanies] = useState([]);
 
     useEffect(() => {
         fetchBranches();
     }, []);
+
+    useEffect(() => {
+        if (branches.length > 0) {
+            // Extract unique companies for filter dropdown
+            const companies = [...new Set(branches
+                .map(branch => branch.CompanyDescription)
+                .filter(company => company && company.trim() !== "")
+            )];
+            setUniqueCompanies(companies);
+        }
+        applyFilters();
+    }, [branches, searchQuery, companyFilter, sortBy, sortOrder]);
 
     const fetchBranches = async () => {
         try {
@@ -49,6 +72,87 @@ export default function Branches() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const applyFilters = () => {
+        let filtered = [...branches];
+
+        // Search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(branch =>
+                branch.Description?.toLowerCase().includes(query) ||
+                branch.AddressEmail?.toLowerCase().includes(query) ||
+                branch.AddressMobileLine?.toLowerCase().includes(query) ||
+                branch.CompanyDescription?.toLowerCase().includes(query) ||
+                branch.AddressCity?.toLowerCase().includes(query) ||
+                branch.AddressStreet?.toLowerCase().includes(query)
+            );
+        }
+
+        // Company filter
+        if (companyFilter !== "all") {
+            filtered = filtered.filter(branch => 
+                branch.CompanyDescription === companyFilter
+            );
+        }
+
+        // Sorting
+        filtered.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (sortBy) {
+                case "name":
+                    valueA = a.Description || "";
+                    valueB = b.Description || "";
+                    break;
+                case "email":
+                    valueA = a.AddressEmail || "";
+                    valueB = b.AddressEmail || "";
+                    break;
+                case "company":
+                    valueA = a.CompanyDescription || "";
+                    valueB = b.CompanyDescription || "";
+                    break;
+                case "phone":
+                    valueA = a.AddressMobileLine || "";
+                    valueB = b.AddressMobileLine || "";
+                    break;
+                case "city":
+                    valueA = a.AddressCity || "";
+                    valueB = b.AddressCity || "";
+                    break;
+                default:
+                    valueA = a.Description || "";
+                    valueB = b.Description || "";
+            }
+
+            if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+            if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredBranches(filtered);
+    };
+
+    const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleSort = (field) => {
+        if (sortBy === field) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(field);
+            setSortOrder("asc");
+        }
+    };
+
+    const clearFilters = () => {
+        setSearchQuery("");
+        setCompanyFilter("all");
+        setSortBy("name");
+        setSortOrder("asc");
     };
 
     // DELETE /api/branches/{id}
@@ -66,8 +170,10 @@ export default function Branches() {
                 try {
                     const res = await fetch(
                         `${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/branches/${id}`,
-                        { headers: { "ngrok-skip-browser-warning": "true" } },
-                        { method: "DELETE" }
+                        { 
+                            method: "DELETE",
+                            headers: { "ngrok-skip-browser-warning": "true" } 
+                        }
                     );
 
                     if (!res.ok) throw new Error("Failed to delete branch");
@@ -88,9 +194,103 @@ export default function Branches() {
             <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <FaBuilding className="text-white" /> Branches
+                    <span className="text-sm font-normal ml-2">
+                        ({filteredBranches.length} {filteredBranches.length === 1 ? 'branch' : 'branches'})
+                    </span>
                 </h2>
-                <Button onClick={() => setOpenBranch(true)} className="bg-indigo-600 hover:bg-indigo-700">Add Branch</Button>
+                <Button 
+                    onClick={() => setOpenBranch(true)} 
+                    className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
+                >
+                    <FaPlus /> Add Branch
+                </Button>
+            </div>
 
+            {/* Search and Filter Bar */}
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search branches by name, email, phone, company, city, or street..."
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
+                    </div>
+
+                    {/* Filter Toggle Button */}
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <FaFilter />
+                        {showFilters ? 'Hide Filters' : 'Show Filters'}
+                    </Button>
+
+                    {/* Clear Filters Button */}
+                    {(searchQuery || companyFilter !== "all") && (
+                        <Button
+                            variant="ghost"
+                            onClick={clearFilters}
+                            className="text-gray-600 hover:text-gray-800"
+                        >
+                            Clear Filters
+                        </Button>
+                    )}
+                </div>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                    <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Company Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Filter by Company
+                            </label>
+                            <select
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                value={companyFilter}
+                                onChange={(e) => setCompanyFilter(e.target.value)}
+                            >
+                                <option value="all">All Companies</option>
+                                {uniqueCompanies.map((company, index) => (
+                                    <option key={index} value={company}>
+                                        {company}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Sort Options */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Sort By
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {['name', 'company', 'email', 'phone', 'city'].map((field) => (
+                                    <Button
+                                        key={field}
+                                        size="sm"
+                                        variant={sortBy === field ? "default" : "outline"}
+                                        className="capitalize"
+                                        onClick={() => handleSort(field)}
+                                    >
+                                        {field}
+                                        {sortBy === field && (
+                                            <span className="ml-1">
+                                                {sortOrder === 'asc' ? '↑' : '↓'}
+                                            </span>
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Table Header */}
@@ -114,9 +314,9 @@ export default function Branches() {
                             </div>
                         ))}
                     </div>
-                ) : branches.length > 0 ? (
+                ) : filteredBranches.length > 0 ? (
                     <div className="space-y-2">
-                        {branches.map((branch) => (
+                        {filteredBranches.map((branch) => (
                             <div key={branch.Id} className="bg-white rounded-lg shadow-lg border">
                                 {/* Main Row */}
                                 <div className="grid grid-cols-12 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
@@ -232,7 +432,20 @@ export default function Branches() {
                 ) : (
                     <div className="text-gray-500 text-center mt-4">
                         <img src={NotFoundImage} alt="Not Found" className="mx-auto w-42" />
-                        <p className="font-medium text-gray-400">No Branches Found.</p>
+                        <p className="font-medium text-gray-400">
+                            {searchQuery || companyFilter !== "all" 
+                                ? "No branches match your search criteria." 
+                                : "No Branches Found."}
+                        </p>
+                        {(searchQuery || companyFilter !== "all") && (
+                            <Button
+                                variant="outline"
+                                className="mt-2"
+                                onClick={clearFilters}
+                            >
+                                Clear Filters
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

@@ -51,7 +51,7 @@ export default function LoanAppraised() {
 
         // Open SweetAlert modal for option selection
         const { value: selectedOption } = await Swal.fire({
-            title: 'Select Audit Option',
+            title: 'Select Appraise Option',
             input: 'radio',
             inputOptions: {
                 1: 'Verify',

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +9,8 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
+import LoanGuarantorsDrawer from "./LoanGuarantorsDrawer";
+import LoanDetailsDrawer from "./LoanDetailsDrawer";
 
 export default function LoanDisbursed() {
     const [loans, setLoans] = useState([]);
@@ -22,7 +23,11 @@ export default function LoanDisbursed() {
     const pageSize = 10;
 
     const [searchTerm, setSearchTerm] = useState("");
+    const [showGuarantors, setShowGuarantors] = useState(false);
+    const [selectedCustomerId, setSelectedCustomerId] = useState(null); // Changed from loanCaseId
 
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [selectedLoan, setSelectedLoan] = useState(null);
 
     const fetchLoanDrafts = () => {
         setLoading(true);
@@ -42,7 +47,7 @@ export default function LoanDisbursed() {
         fetchLoanDrafts();
     }, [refresh, pageIndex]);
 
-    const handleSubmitForAppraisal = async (id) => {
+    const handleSubmitForAppraisal = async (customerId) => { // Changed parameter
         // Open SweetAlert modal for option selection
         const { value: selectedOption } = await Swal.fire({
             title: 'Select Audit Option',
@@ -64,9 +69,9 @@ export default function LoanDisbursed() {
 
         if (!selectedOption) return; // user cancelled
 
-        setSubmitting(id);
+        setSubmitting(customerId);
         const payload = {
-            loanCaseId: id,
+            customerId: customerId, // Changed from loanCaseId
             loanAuditOption: parseInt(selectedOption),
         };
 
@@ -95,9 +100,8 @@ export default function LoanDisbursed() {
         }
     };
 
-
-    const handleOptionChange = (loanId, value) => {
-        setAuditOptions({ ...auditOptions, [loanId]: parseInt(value) });
+    const handleOptionChange = (customerId, value) => { // Changed parameter
+        setAuditOptions({ ...auditOptions, [customerId]: parseInt(value) });
     };
 
     const filteredLoans = loans.filter((loan) => {
@@ -113,6 +117,37 @@ export default function LoanDisbursed() {
         );
     });
 
+    const handleDownloadPdf = async (customerId) => { // Changed parameter
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_APP_LOANING_URL}/api/values/GetLoanStatement/${customerId}?downloadPdf=true`, // Changed to customerId
+                {
+                    method: "GET",
+                    headers: {
+                        "ngrok-skip-browser-warning": "true",
+                    },
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Failed to download PDF");
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Loan_Statement_${customerId}.pdf`; // Changed to customerId
+            document.body.appendChild(a);
+            a.click();
+
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            Swal.fire("Error", "Failed to download loan statement", "error");
+        }
+    };
 
     return (
         <div className="bg-white py-8 rounded-lg">
@@ -124,24 +159,25 @@ export default function LoanDisbursed() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-1/3 px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-
-                <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-gray-600 text-white hover:bg-gray-700"
-                    onClick={() => setRefresh(!refresh)}
-                >
-                    Refresh
-                </Button>
+                <div className="flex justify-between items-center gap-3">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-gray-600 text-white hover:bg-gray-700"
+                        onClick={() => setRefresh(!refresh)}
+                    >
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <div className="bg-gray-200 p-4 rounded-sm">
-                <div className="grid grid-cols-10 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+                <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
                     <span className="col-span-1">Loan No.</span>
                     <span className="col-span-2">Customer</span>
                     <span className="col-span-2">Branch</span>
                     <span className="col-span-2">Status</span>
-                    <span className="col-span-1">Amount</span>
+                    <span className="col-span-2">Amount</span>
                     <span className="col-span-2 text-right">Actions</span>
                 </div>
 
@@ -165,7 +201,7 @@ export default function LoanDisbursed() {
                                 key={loan.Id}
                                 className="bg-white rounded-lg shadow-lg border"
                             >
-                                <div className="grid grid-cols-10 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                                <div className="grid grid-cols-13 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                                     <span className="font-medium text-indigo-700 col-span-1">
                                         {loan.CaseNumber.toString().padStart(7, "0")}
                                     </span>
@@ -178,56 +214,56 @@ export default function LoanDisbursed() {
                                     <span className="text-sm w-28 rounded-2xl col-span-2 text-center flex items-center justify-center p-1 bg-gray-500 text-white">
                                         {loan.StatusDescription}
                                     </span>
-                                    <span className="font-semibold col-span-1">
+                                    <span className="font-semibold col-span-2">
                                         Ksh {loan.AmountApplied}
                                     </span>
 
-
-
-                                    <div className="flex gap-2 col-span-2 justify-end">
+                                    <div className="flex gap-2 col-span-4 justify-end">
                                         {/* <Button
                                             size="sm"
                                             variant="default"
                                             className="bg-indigo-600 text-white"
-                                            onClick={() => handleSubmitForAppraisal(loan.Id)}
-                                            disabled={submitting === loan.Id}
+                                            onClick={() => handleSubmitForAppraisal(loan.CustomerId)} // Changed to CustomerId
+                                            disabled={submitting === loan.CustomerId}
                                         >
-                                            {submitting === loan.Id ? "Submitting..." : "Appraise"}
+                                            {submitting === loan.CustomerId ? "Submitting..." : "Appraise"}
                                         </Button> */}
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            className="bg-gray-700 text-white hover:bg-gray-600"
-                                            onClick={() =>
-                                                setExpandedRow(expandedRow === loan.Id ? null : loan.Id)
-                                            }
+                                            className="bg-red-600 text-white hover:bg-red-700"
+                                            onClick={() => {
+                                                handleDownloadPdf(loan.CustomerId); // Changed to CustomerId
+                                            }}
                                         >
-                                            {expandedRow === loan.Id ? "Hide Details" : "View Details"}
+                                            Download PDF
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-green-700 text-white hover:bg-green-700"
+                                            onClick={() => {
+                                                setSelectedLoan(loan);
+                                                setSelectedCustomerId(loan.CustomerId); // Changed to CustomerId
+                                                setShowGuarantors(true);
+                                            }}
+                                        >
+                                            View Guarantors
                                         </Button>
 
-
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-gray-700 text-white hover:bg-gray-600"
+                                            onClick={() => {
+                                                setSelectedLoan(loan);
+                                                setDetailsOpen(true);
+                                            }}
+                                        >
+                                            View Details
+                                        </Button>
                                     </div>
-
                                 </div>
-                                {expandedRow === loan.Id && (
-                                    <div className="border-t bg-gray-300 p-4 mx-1 mb-1 rounded-b-lg space-y-4">
-                                        <div className="bg-white p-4 rounded-lg shadow border">
-                                            <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl mb-2 flex items-center gap-2">
-                                                Loan Details
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-xl text-sm text-gray-700">
-                                                <div>Loan Purpose: {loan.LoanPurposeDescription}</div>
-                                                <div>Loan Product: {loan.LoanProductDescription}</div>
-                                                <div>Customer ID: {loan.CustomerId}</div>
-                                                <div>Customer Email: {loan.CustomerAddressEmail}</div>
-                                                <div>Phone: {loan.CustomerAddressMobileLine}</div>
-                                                <div>Amount Applied: Ksh {loan.AmountApplied}</div>
-                                                <div>Received Date: {new Date(loan.ReceivedDate).toLocaleDateString()}</div>
-                                                <div>Status: {loan.StatusDescription}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>
@@ -260,6 +296,18 @@ export default function LoanDisbursed() {
                     Next
                 </Button>
             </div>
+
+            <LoanGuarantorsDrawer
+                open={showGuarantors}
+                customerId={selectedCustomerId} // Changed prop name
+                loan={selectedLoan}
+                onClose={() => setShowGuarantors(false)}
+            />
+            <LoanDetailsDrawer
+                open={detailsOpen}
+                loan={selectedLoan}
+                onClose={() => setDetailsOpen(false)}
+            />
         </div>
     );
 }

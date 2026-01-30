@@ -22,8 +22,9 @@ import LoanDrafts from "./LoanDrafts";
 import LoanApproved from "./LoanApproved";
 import LoanDisbursed from "./LoanDisbursed";
 import LoanRejected from "./LoanRejected";
-import AddLoanApplicationDrawer from "./AddLoanApplicationDrawer";
 import LoanAppraised from "./LoanAppraised";
+import AddLoanApplicationDrawer from "./AddLoanApplicationDrawer/AddLoanApplicationDrawer";
+import RestructuredLoans from "./RestructuredLoans";
 
 export default function LoanApplication() {
     const [addDrawerOpen, setAddDrawerOpen] = useState(false);
@@ -93,7 +94,13 @@ export default function LoanApplication() {
                     >
                         <FaMoneyCheckAlt /> Disbursed
                     </TabsTrigger>
-
+<TabsTrigger
+                        value="Restructured"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg 
+            data-[state=active]:bg-indigo-600 data-[state=active]:text-white  hover:bg-indigo-600 hover:text-white transition"
+                    >
+                        <FaMoneyCheckAlt /> Restructured
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Tab Contents */}
@@ -115,6 +122,9 @@ export default function LoanApplication() {
 
                 <TabsContent value="rejected">
                     <LoanRejected />
+                </TabsContent>
+                <TabsContent value="Restructured">
+                    <RestructuredLoans />
                 </TabsContent>
             </Tabs>
 

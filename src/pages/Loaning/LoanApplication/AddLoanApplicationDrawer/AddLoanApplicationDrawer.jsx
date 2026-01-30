@@ -1,10 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import Swal from "sweetalert2";
+import CustomerSelectModal from "./CustomerSelectModal";
+import LoanProductSelectModal from "./LoanProductSelectModal";
+import GuarantorSelectModal from "./GuarantorSelectModal";
+import ParentLoanSelectModal from "./ParentLoanSelectModal";
+
+
+
+
+
 
 export default function AddLoanApplicationDrawer({ open, onClose }) {
     const [loading, setLoading] = useState(false);
@@ -14,6 +23,19 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
     const [loanProductSearch, setLoanProductSearch] = useState("");
     const [loanSectors, setLoanSectors] = useState([]);
     const [loanSubSectors, setLoanSubSectors] = useState([]);
+    const [selectedAccounts, setSelectedAccounts] = useState([]);
+    const [boosted, setBoosted] = useState(false);
+    const [customerModalOpen, setCustomerModalOpen] = useState(false);
+    const [loanProductModalOpen, setLoanProductModalOpen] = useState(false);
+
+    const [guarantorModalIndex, setGuarantorModalIndex] = useState(null);
+    const [parentLoanModalOpen, setParentLoanModalOpen] = useState(false);
+
+    const [selectedParentLoan, setSelectedParentLoan] = useState(null);
+
+
+
+
 
 
 
@@ -48,6 +70,8 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
         Remarks: "",
         AmountApplied: 0,
         Reference: "",
+        IsBatched: false,
+        receivedDate: new Date().toISOString().split("T")[0],
 
         // SALARY
         LoanRegistrationNetIncome: 0,
@@ -57,9 +81,12 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
         //Sector
         SectorCode: "",
-        SubSectorCode: ""
+        SubSectorCode: "",
+
+        parentId: "",
 
     });
+
 
     const [guarantors, setGuarantors] = useState([
         {
@@ -120,26 +147,33 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
 
 
+
+
+
     const filteredSubSectors = loanSubSectors.filter(
-        s => s.SectorCode === form.SectorCode
+        s =>
+            s.IsActive &&
+            form.SectorCode &&
+            s.SubSectorCode.startsWith(form.SectorCode)
     );
+
 
 
 
     /* ================= FETCH CUSTOMERS ================= */
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/customers`, {
-            headers: { "ngrok-skip-browser-warning": "true" }
+        fetch("http://88.99.215.90:8600/api/values/GetMembersWithDetails", {
+            headers: { "ngrok-skip-browser-warning": "true" },
         })
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    setCustomers(data.data || []);
+                if (data.Success) {
+                    setCustomers(data.Data.Members || []);
                 }
             })
             .catch(() => {
-                Swal.fire("Error", "Failed to load customers", "error");
+                Swal.fire("Error", "Failed to load members", "error");
             });
     }, []);
 
@@ -151,25 +185,53 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
 
     /* ================= CUSTOMER SELECT ================= */
+    const totalAvailableBalance = selectedAccounts
+        .filter(a => a.CustomerAccountTypeProductCode === 1) // Savings only
+        .reduce((sum, a) => sum + (Number(a.AvailableBalance) || 0), 0);
+
+
+    // // Member Deposits (Savings only)
+    // const memberDeposits = selectedAccounts
+    //     .filter(a => a.CustomerAccountTypeProductCode === 1) // Savings
+    //     .reduce((sum, a) => sum + (Number(a.AvailableBalance) || 0), 0);
+
+    const memberDeposits = useMemo(() => {
+        return selectedAccounts
+            .filter(acc =>
+                acc.FullAccountNumber.slice(-3) === "001" &&
+                acc.AvailableBalance > 0
+            )
+            .reduce((sum, acc) => sum + Number(acc.AvailableBalance || 0), 0);
+    }, [selectedAccounts]);
+
+
+    // Total Savings = Member Deposits * 4
+    const totalSavings = memberDeposits * 4;
+
+
+
     const handleCustomerSelect = (value) => {
         setSearchValue(value);
 
-        const selected = customers.find(c =>
-            `${c.IndividualFirstName} | ${c.IdentificationNumber} | ${c.IndividualPayrollNumbers}` === value
+        const selectedMember = customers.find(m =>
+            `${m.Customer.IndividualFirstName} | ${m.Customer.IndividualIdentityCardNumber} | ${m.Customer.Reference3}` === value
         );
 
-        if (!selected) return;
+        if (!selectedMember) return;
+
+        const c = selectedMember.Customer;
+
+        setSelectedAccounts(selectedMember.Accounts || []);
 
         setForm({
             // CUSTOMER
-            CustomerId: selected.Id,
-            CustomerFullName: selected.IndividualFirstName + " " + selected.IndividualLastName || "",
-            CustomerIndividualIdentityCardNumber: selected.IndividualIdentityCardNumber || "",
-            CustomerIndividualPayrollNumbers: selected.IndividualPayrollNumbers || "",
-            CustomerPersonalIdentificationNumber: selected.PersonalIdentificationNumber || "",
-            CustomerAddressMobileLine: selected.AddressMobileLine || "",
-            CustomerAddressEmail: selected.AddressEmail || "",
-            LoanProductDescription: "",
+            CustomerId: c.Id,
+            CustomerFullName: `${c.IndividualFirstName} ${c.IndividualLastName}` || "",
+            CustomerIndividualIdentityCardNumber: c.IndividualIdentityCardNumber || "",
+            CustomerIndividualPayrollNumbers: c.Reference3 || "",
+            CustomerPersonalIdentificationNumber: c.PersonalIdentificationNumber || "",
+            CustomerAddressMobileLine: c.AddressMobileLine || "",
+            CustomerAddressEmail: c.AddressEmail || "",
             Reference: "",
 
             // LOAN PRODUCT (AUTO-FILLED)
@@ -192,6 +254,7 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
             LoanPurposeDescription: "",
             Remarks: "",
             AmountApplied: 0,
+            receivedDate: "",
 
             // SALARY
             LoanRegistrationNetIncome: 0,
@@ -239,6 +302,26 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
             LoanRegistrationAllowSelfGuarantee:
                 selected.LoanRegistrationAllowSelfGuarantee,
         }));
+
+
+        // ensure minimum guarantors exist
+        const min = selected.LoanRegistrationMinimumGuarantors || 0;
+
+        setGuarantors(
+            Array.from({ length: min }, () => ({
+                CustomerId: "",
+                searchValue: "",
+                AmountGuaranteed: 0,
+                PersonalIdentificationNumber: "",
+                IndividualIdentityCardNumber: "",
+                IndividualPayrollNumbers: "",
+                AddressEmail: "",
+                AddressMobileLine: "",
+                FullName: "",
+                Remarks: "",
+            }))
+        );
+
     };
 
 
@@ -268,15 +351,28 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
 
     const removeGuarantor = (index) => {
-        if (guarantors.length === 1) return;
+        const min = form.LoanRegistrationMinimumGuarantors || 0;
+
+        if (guarantors.length <= min) {
+            Swal.fire(
+                "Not Allowed",
+                `Minimum ${min} guarantor(s) required for this loan`,
+                "warning"
+            );
+            return;
+        }
+
         setGuarantors(prev => prev.filter((_, i) => i !== index));
+
     };
 
 
     const handleGuarantorSelect = (index, value) => {
+
         const selected = customers.find(c =>
-            `${c.IndividualFirstName} | ${c.IdentificationNumber} | ${c.IndividualPayrollNumbers}` === value
+            `${c.Customer.IndividualFirstName} | ${c.Customer.IndividualIdentityCardNumber} | ${c.Customer.Reference3}` === value
         );
+
 
         if (!selected) {
             updateGuarantor(index, "searchValue", value);
@@ -284,17 +380,20 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
         }
 
         const copy = [...guarantors];
+        const c = selected.Customer;
+
         copy[index] = {
             ...copy[index],
             searchValue: value,
-            FullName: selected.IndividualFirstName + " " + selected.IndividualLastName || "",
-            IndividualIdentityCardNumber: selected.IndividualIdentityCardNumber || "",
-            IndividualPayrollNumbers: selected.IndividualPayrollNumbers || "",
-            PersonalIdentificationNumber: selected.PersonalIdentificationNumber || "",
-            AddressMobileLine: selected.AddressMobileLine || "",
-            AddressEmail: selected.AddressEmail || "",
-            CustomerId: selected.Id
+            FullName: `${c.IndividualFirstName} ${c.IndividualLastName}`,
+            IndividualIdentityCardNumber: c.IndividualIdentityCardNumber || "",
+            IndividualPayrollNumbers: c.Reference3 || "",
+            PersonalIdentificationNumber: c.PersonalIdentificationNumber || "",
+            AddressMobileLine: c.AddressMobileLine || "",
+            AddressEmail: c.AddressEmail || "",
+            CustomerId: c.Id,
         };
+
 
         setGuarantors(copy);
     };
@@ -315,6 +414,34 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
     console.log(payload);
     const handleSubmit = async () => {
+
+        //minimum guarantors validation
+        if (guarantors.length < form.LoanRegistrationMinimumGuarantors) {
+            Swal.fire(
+                "Validation Error",
+                `This loan requires at least ${form.LoanRegistrationMinimumGuarantors} guarantor(s)`,
+                "error"
+            );
+            return;
+        }
+
+        //total guaranteed amount validation
+        const totalGuaranteed = guarantors.reduce(
+            (sum, g) => sum + (Number(g.AmountGuaranteed) || 0),
+            0
+        );
+
+        //total guaranteed amount should not exceed amount applied
+        if (totalGuaranteed > Number(form.AmountApplied)) {
+            Swal.fire(
+                "Validation Error",
+                "Total guaranteed amount cannot exceed the amount applied",
+                "error"
+            );
+            return;
+        }
+
+
         setLoading(true);
         try {
             const response = await fetch(
@@ -383,7 +510,21 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
     ]);
 
 
+    const totalGuaranteedAmount = useMemo(() => {
+        return guarantors.reduce(
+            (sum, g) => sum + (Number(g.AmountGuaranteed) || 0),
+            0
+        );
+    }, [guarantors]);
 
+
+
+    console.log(selectedAccounts);
+
+
+
+    console.log("Form Data:", form);
+    console.log("Guarantors:", guarantors)
     return (
         <AnimatePresence>
             {open && (
@@ -399,7 +540,7 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
                     {/* DRAWER */}
                     <motion.div
-                        className="fixed top-3 right-3 w-[85vw] max-w-[900px] bg-white shadow-2xl z-50 rounded-2xl flex flex-col"
+                        className="fixed top-3 right-3 w-[90vw] max-w-[1000px] bg-white shadow-2xl z-50 rounded-2xl flex flex-col"
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
@@ -426,20 +567,20 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                     {/* SEARCHABLE DATALIST */}
                                     <div className="mb-4">
                                         <Label>Select Customer</Label>
-                                        <Input
-                                            list="customers"
-                                            placeholder="Search by name, ID or payroll"
-                                            value={searchValue}
-                                            onChange={(e) => handleCustomerSelect(e.target.value)}
-                                        />
-                                        <datalist id="customers">
-                                            {customers.map(c => (
-                                                <option
-                                                    key={c.Id}
-                                                    value={`${c.IndividualFirstName} | ${c.IdentificationNumber} | ${c.IndividualPayrollNumbers}`}
-                                                />
-                                            ))}
-                                        </datalist>
+
+                                        <div className="flex gap-2">
+                                            <Input
+                                                placeholder="Select customer"
+                                                value={form.CustomerFullName}
+                                                readOnly
+                                            />
+                                            <Button
+                                                type="button"
+                                                onClick={() => setCustomerModalOpen(true)}
+                                            >
+                                                Select
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -452,30 +593,86 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                     </div>
                                 </Card>
 
+                                {/* ACCOUNTS SUMMARY */}
+                                <Card className="p-4 mb-6">
+                                    <div className="flex justify-between items-center bg-indigo-600 text-white rounded-md px-5 py-3 mb-4">
+                                        <h3 className="font-semibold">Member Accounts & Balances</h3>
+                                        <div>
+                                            Total Savings <span className="bg-indigo-500 px-4 py-2 rounded-md ">{(memberDeposits + Number(form.Reference)).toLocaleString()}</span>
+                                        </div>
+
+                                    </div>
+
+
+                                    {selectedAccounts.length === 0 && (
+                                        <p className="text-sm text-gray-50">No accounts found.</p>
+                                    )}
+
+                                    <div className="max-h-64 overflow-y-auto bg-gray-200 p-4 rounded-lg">
+                                        {selectedAccounts.map(acc => (
+                                            <div
+                                                key={acc.Id}
+                                                className="border rounded-lg p-3 mb-2 flex justify-between items-center bg-gray-50"
+                                            >
+                                                <div>
+                                                    {/* <p className="font-medium">
+                                                        {acc.FullAccountNumber}
+                                                    </p> */}
+                                                    <p className="text-xs text-gray-500">
+                                                        {acc.CustomerAccountTypeTargetProductDescription}
+                                                        {" · "}
+                                                        {acc.CustomerAccountTypeProductCodeDescription}
+                                                    </p>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    {acc.CustomerAccountTypeProductCodeDescription === "Loan" && (
+                                                        <p className="text-sm text-red-700">
+                                                            Book: <b>{acc.BookBalance.toLocaleString()}</b>
+                                                        </p>)}
+
+                                                    {acc.CustomerAccountTypeProductCodeDescription === "Savings" && (
+                                                        <p className="text-sm text-green-700">
+                                                            Available: <b>{acc.AvailableBalance.toLocaleString()}</b>
+                                                        </p>)}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Card>
+
 
                                 {/* LOAN DETAILS */}
                                 <Card className="p-4 mb-6">
-                                    <h3 className="font-semibold mb-4">Loan Details</h3>
+                                    <div className="flex justify-between items-center bg-indigo-600 text-white rounded-md px-5 py-3 mb-4">
+
+                                        <h2 className="font-semibold">Loan Details</h2>
+                                        <div className="flex justify-between items-center gap-4">
+                                            <div className="bg-indigo-700 p-3 rounded-lg"> Qualifying Amount  <span className="bg-indigo-500 px-4 py-2 rounded-md ">{totalSavings.toLocaleString()}</span> </div>
+                                            {Number(form.Reference) > 0 && <div className="bg-gray-700 p-3 rounded-lg"><span>New Loan Limit <span className="bg-indigo-500 px-4 py-2 rounded-md ">   {((memberDeposits + Number(form.Reference)) * 4).toLocaleString()}</span></span></div>}
+                                        </div>
+                                    </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                                         <div className="md:col-span-4">
                                             <Label>Select Loan Product</Label>
-                                            <Input
-                                                list="loan-products"
-                                                placeholder="Search loan product"
-                                                value={loanProductSearch}
-                                                onChange={(e) => handleLoanProductSelect(e.target.value)}
-                                            />
-                                            <datalist id="loan-products">
-                                                {loanProducts.map(p => (
-                                                    <option
-                                                        key={p.Id}
-                                                        value={`${p.PaddedCode} | ${p.Description}`}
-                                                    />
-                                                ))}
-                                            </datalist>
+
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    placeholder="Select loan product"
+                                                    value={form.LoanProductDescription}
+                                                    readOnly
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={() => setLoanProductModalOpen(true)}
+                                                >
+                                                    Select
+                                                </Button>
+                                            </div>
                                         </div>
+
 
                                         <div>
                                             <Label>Loan Product</Label>
@@ -626,13 +823,87 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                                 readOnly
                                             />
                                         </div>
-
-                                        <div className="md:col-span-4">
-                                            <Label>Remarks</Label>
+                                        <div>
+                                            <Label>Received Date</Label>
                                             <Input
-                                                value={form.Remarks}
-                                                onChange={e => update("Remarks", e.target.value)}
+                                                type="date"
+                                                value={form.receivedDate}
+                                                onChange={(e) => update("receivedDate", e.target.value)}
                                             />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 p-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={boosted}
+                                                onChange={(e) => {
+                                                    const isBoosted = e.target.checked;
+
+                                                    setBoosted(isBoosted);
+                                                    setForm(prev => ({
+                                                        ...prev,
+                                                        IsBatched: !isBoosted,
+                                                        Remarks: isBoosted
+                                                            ? prev.Remarks
+                                                                ? `${prev.Remarks} - boosted`
+                                                                : "boosted"
+                                                            : prev.Remarks.replace(/\s?-?\s?boosted/i, "").trim(),
+                                                    }));
+                                                }}
+                                            />
+
+                                            <Label>Is Boosted Loan?</Label> <br />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {boosted && (
+                                                <div>
+                                                    <Label>Reference Amount</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Enter boosted amount"
+                                                        value={form.Reference}
+                                                        onChange={(e) => update("Reference", e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+
+
+                                            {
+                                                boosted && (
+                                                    <div>
+                                                        <Label>Remarks</Label>
+                                                        <Input
+                                                            className="w-full"
+                                                            value={form.Remarks}
+                                                            readOnly={boosted}
+                                                            onChange={e => update("Remarks", e.target.value)}
+                                                        />
+
+                                                    </div>
+                                                )}
+
+
+                                            <div>
+                                                <Label>Loan to Offset</Label>
+
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={selectedParentLoan?.LoanProductDescription || ""}
+                                                        placeholder="Select Loan to Offset"
+                                                        readOnly
+                                                    />
+
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => setParentLoanModalOpen(true)}
+                                                    >
+                                                        Select
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+
                                         </div>
                                     </div>
                                 </Card>
@@ -670,22 +941,20 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                             <select
                                                 className="w-full border rounded-md p-2"
                                                 value={form.SubSectorCode}
-                                                onChange={(e) =>
-                                                    update("SubSectorCode", e.target.value)
-                                                }
+                                                onChange={(e) => update("SubSectorCode", e.target.value)}
                                                 disabled={!form.SectorCode}
                                             >
                                                 <option value="">Select Sub Sector</option>
-                                                {(filteredSubSectors.length
-                                                    ? filteredSubSectors
-                                                    : loanSubSectors
-                                                ).map(sub => (
+
+                                                {filteredSubSectors.map(sub => (
                                                     <option key={sub.Id} value={sub.SubSectorCode}>
                                                         {sub.SubSectorCode} - {sub.SubSectorName}
                                                     </option>
                                                 ))}
                                             </select>
+
                                         </div>
+
                                     </div>
                                 </Card>
 
@@ -693,7 +962,7 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
 
 
-                                {/* SALARY DETAILS */}
+                                {/* SALARY DETAILS
                                 <Card className="p-4 mb-6">
                                     <h3 className="font-semibold mb-4">Salary Details</h3>
 
@@ -742,7 +1011,7 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                         </div>
 
                                     </div>
-                                </Card>
+                                </Card> */}
 
 
 
@@ -757,7 +1026,14 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
 
                                 {/* GUARANTORS */}
                                 <Card className="p-4">
-                                    <h3 className="font-semibold mb-4">Guarantors</h3>
+                                    <div className="flex justify-between items-center bg-indigo-600 text-white rounded-md px-5 py-3 mb-4">
+                                        <h3 className="font-semibold">Guarantors</h3>
+                                        <div className="text-sm text-gray-50">
+                                            Guaranteed: <b>{totalGuaranteedAmount.toLocaleString()}</b> /{" "}
+                                            {Number(form.AmountApplied).toLocaleString()}
+                                        </div>
+                                    </div>
+
 
                                     {guarantors.map((g, index) => (
 
@@ -770,7 +1046,7 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                                     Guarantor {index + 1}
                                                 </h4>
 
-                                                {guarantors.length > 1 && (
+                                                {guarantors.length > form.LoanRegistrationMinimumGuarantors && (
                                                     <Button
                                                         size="sm"
                                                         className="bg-red-600 text-white"
@@ -786,23 +1062,22 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                                 {/* SEARCH GUARANTOR */}
                                                 <div className="md:col-span-3">
                                                     <Label>Select Guarantor</Label>
-                                                    <Input
-                                                        list={`guarantors-${index}`}
-                                                        placeholder="Search by name, ID or payroll"
-                                                        value={g.searchValue}
-                                                        onChange={(e) =>
-                                                            handleGuarantorSelect(index, e.target.value)
-                                                        }
-                                                    />
-                                                    <datalist id={`guarantors-${index}`}>
-                                                        {customers.map(c => (
-                                                            <option
-                                                                key={c.Id}
-                                                                value={`${c.IndividualFirstName} | ${c.IdentificationNumber} | ${c.IndividualPayrollNumbers}`}
-                                                            />
-                                                        ))}
-                                                    </datalist>
+
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            placeholder="Select guarantor"
+                                                            value={g.FullName}
+                                                            readOnly
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => setGuarantorModalIndex(index)}
+                                                        >
+                                                            Select
+                                                        </Button>
+                                                    </div>
                                                 </div>
+
                                                 <div>
                                                     <Label>Full Name</Label>
                                                     <Input
@@ -851,13 +1126,30 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                                         placeholder="Amount Guaranteed"
                                                         type="number"
                                                         value={g.AmountGuaranteed}
-                                                        onChange={e =>
-                                                            updateGuarantor(index, "AmountGuaranteed", Number(e.target.value))
-                                                        }
+                                                        onChange={(e) => {
+                                                            const value = Number(e.target.value) || 0;
+
+                                                            const otherGuarantorsTotal = guarantors.reduce(
+                                                                (sum, g, i) =>
+                                                                    i === index ? sum : sum + (Number(g.AmountGuaranteed) || 0),
+                                                                0
+                                                            );
+
+                                                            if (otherGuarantorsTotal + value > Number(form.AmountApplied)) {
+                                                                Swal.fire(
+                                                                    "Amount Exceeded",
+                                                                    "Total guaranteed amount cannot exceed Amount Applied",
+                                                                    "warning"
+                                                                );
+                                                                return;
+                                                            }
+
+                                                            updateGuarantor(index, "AmountGuaranteed", value);
+                                                        }}
+
                                                     />
                                                 </div>
                                             </div>
-
                                         </div>
                                     ))}
 
@@ -867,6 +1159,11 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                 </Card>
                             </div>
 
+
+
+
+
+
                             {/* ACTIONS */}
                             <div className="flex justify-end mt-8">
                                 <Button onClick={handleSubmit} disabled={loading}>
@@ -874,10 +1171,136 @@ export default function AddLoanApplicationDrawer({ open, onClose }) {
                                 </Button>
                             </div>
 
+
                         </div>
                     </motion.div>
                 </>
             )}
+            <CustomerSelectModal
+                open={customerModalOpen}
+                onClose={() => setCustomerModalOpen(false)}
+                customers={customers}
+                onSelect={(member) => {
+                    const c = member.Customer;
+
+                    setSelectedAccounts(member.Accounts || []);
+
+                    setForm(prev => ({
+                        ...prev,
+                        CustomerId: c.Id,
+                        CustomerFullName: `${c.IndividualFirstName} ${c.IndividualLastName}`,
+                        CustomerIndividualIdentityCardNumber: c.IndividualIdentityCardNumber || "",
+                        CustomerIndividualPayrollNumbers: c.Reference3 || "",
+                        CustomerPersonalIdentificationNumber: c.PersonalIdentificationNumber || "",
+                        CustomerAddressMobileLine: c.AddressMobileLine || "",
+                        CustomerAddressEmail: c.AddressEmail || "",
+                        Reference: "",
+                    }));
+
+                    setSelectedParentLoan(null);
+                    update("parentId", "");
+                }}
+            />
+
+
+            <LoanProductSelectModal
+                open={loanProductModalOpen}
+                onClose={() => setLoanProductModalOpen(false)}
+                loanProducts={loanProducts}
+                onSelect={(selected) => {
+
+                    setForm(prev => ({
+                        ...prev,
+
+                        LoanProductId: selected.Id,
+                        LoanProductDescription: selected.Description,
+                        LoanRegistrationTermInMonths: selected.LoanRegistrationTermInMonths,
+                        LoanInterestAnnualPercentageRate: selected.LoanInterestAnnualPercentageRate,
+                        LoanInterestChargeModeDescription: selected.LoanInterestChargeModeDescription,
+                        LoanInterestCalculationModeDescription: selected.LoanInterestCalculationModeDescription,
+                        LoanRegistrationLoanProductCategoryDescription:
+                            selected.LoanRegistrationLoanProductCategoryDescription,
+                        LoanRegistrationMaximumAmount: selected.LoanRegistrationMaximumAmount,
+                        LoanRegistrationMinimumInterestAmount: selected.LoanRegistrationMinimumInterestAmount,
+                        LoanRegistrationInvestmentsMultiplier: selected.LoanRegistrationInvestmentsMultiplier,
+                        LoanRegistrationStandingOrderTriggerDescription:
+                            selected.LoanRegistrationStandingOrderTriggerDescription,
+                        LoanRegistrationMinimumGuarantors:
+                            selected.LoanRegistrationMinimumGuarantors,
+                        LoanRegistrationMaximumGuarantees:
+                            selected.LoanRegistrationMaximumGuarantees,
+                        LoanRegistrationAllowSelfGuarantee:
+                            selected.LoanRegistrationAllowSelfGuarantee,
+                    }));
+
+                    // Ensure minimum guarantors
+                    const min = selected.LoanRegistrationMinimumGuarantors || 0;
+
+                    setGuarantors(
+                        Array.from({ length: min }, () => ({
+                            CustomerId: "",
+                            searchValue: "",
+                            AmountGuaranteed: 0,
+                            PersonalIdentificationNumber: "",
+                            IndividualIdentityCardNumber: "",
+                            IndividualPayrollNumbers: "",
+                            AddressEmail: "",
+                            AddressMobileLine: "",
+                            FullName: "",
+                            Remarks: "",
+                        }))
+                    );
+                }}
+            />
+
+
+            <GuarantorSelectModal
+                open={guarantorModalIndex !== null}
+                onClose={() => setGuarantorModalIndex(null)}
+                customers={customers}
+                applicantId={form.CustomerId}
+                allowSelfGuarantee={form.LoanRegistrationAllowSelfGuarantee}
+                selectedGuarantorIds={guarantors
+                    .map(g => g.CustomerId)
+                    .filter(Boolean)}
+                onSelect={(member) => {
+                    const c = member.Customer;
+
+                    setGuarantors(prev => {
+                        const copy = [...prev];
+
+                        copy[guarantorModalIndex] = {
+                            ...copy[guarantorModalIndex],
+                            CustomerId: c.Id,
+                            FullName: `${c.IndividualFirstName} ${c.IndividualLastName}`,
+                            IndividualIdentityCardNumber: c.IndividualIdentityCardNumber || "",
+                            IndividualPayrollNumbers: c.Reference3 || "",
+                            PersonalIdentificationNumber: c.PersonalIdentificationNumber || "",
+                            AddressMobileLine: c.AddressMobileLine || "",
+                            AddressEmail: c.AddressEmail || "",
+                        };
+
+                        return copy;
+                    });
+                }}
+            />
+
+            <ParentLoanSelectModal
+                open={parentLoanModalOpen}
+                onClose={() => setParentLoanModalOpen(false)}
+                customers={customers}   // ✅ pass customers
+                selectedCustomerId={form.CustomerId}
+                onSelect={(loan) => {
+                    setSelectedParentLoan(loan);   // 👈 for display
+                    setForm(prev => ({
+                        ...prev,
+                        parentId: loan.Id,   // ✅ only ID stored
+                        Remarks: prev.Remarks
+                    }));
+                    setParentLoanModalOpen(false);
+                }}
+            />
+
         </AnimatePresence>
     );
 }

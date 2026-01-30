@@ -11,7 +11,7 @@ import { MdInventory2 } from "react-icons/md";
 import { MdBusinessCenter } from "react-icons/md";
 import bgcircle from "../assets/circle.jpg";
 import { Outlet } from "react-router-dom";
-import { FaWallet } from "react-icons/fa";
+import { FaRegFileAlt, FaWallet } from "react-icons/fa";
 
 
 
@@ -138,6 +138,9 @@ const mockWorkspaces = [
       { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
       { id: "Finance/MemberReceipting", name: "Receipt", sublinks: [] },
       { id: "Finance/Creditbatches", name: "Creditbatches", sublinks: [] },
+      //{ id: "Finance/InterTransfer", name: "Inter Transfer", sublinks: [] },
+
+
 
 
       //{ id: "Finance/PurchaseInvoices", name: "Purchase Invoices", sublinks: [] },
@@ -201,10 +204,12 @@ const mockWorkspaces = [
       { id: "Membership/Employers", name: "Employers", sublinks: [] },
       //{ id: "Membership/Division", name: "Division", sublinks: [] },
       //{ id: "Membership/Zones", name: "Zones", sublinks: [] },
-      //{ id: "Membership/Stations", name: "Stations", sublinks: [] },
+      { id: "Membership/Stations", name: "Stations", sublinks: [] },
       //{ id: "Membership/Administrative", name: "Administrative", sublinks: [] },
       { id: "Membership/Products", name: "Savings Products", sublinks: [] },
+      { id: "Membership/Insurance", name: "Insurance", sublinks: [] },
       { id: "Membership/Members", name: "Members", sublinks: [] },
+      { id: "Membership/MemberExit", name: "Member Exit", sublinks: [] },
       //{ id: "Membership/customersAccount ", name: "Customers Account ", sublinks: [] },
     ],
   },
@@ -219,9 +224,19 @@ const mockWorkspaces = [
       { id: "Loaning/LoanSector", name: "Loan Sector", sublinks: [] },
       { id: "Loaning/LoanSubSector", name: "Loan SubSector", sublinks: [] },
       { id: "Loaning/LoanCalculator", name: "Loan Calculator", sublinks: [] },
-      { id: "Loaning/LoanReports", name: "Loan Reports", sublinks: [] },
-
-
+      { id: "Loaning/LoanRegister", name: "Loan Register", sublinks: [] },
+    ],
+  },
+  {
+    id: "ws8",
+    name: "Reports",
+    title: "Reports",
+    icon: <FaRegFileAlt className="text-2xl" />,
+    dms: [
+      { id: "Reports/LoanReports", name: "Loan Reports", sublinks: [] },
+      { id: "Reports/FinancialReports", name: "Finance Reports", sublinks: [] },
+      { id: "Reports/GenerateSasraForm", name: "Generate Sasra Form", sublinks: [] },
+      { id: "Reports/MemberStatement", name: "Member Statement", sublinks: [] },
     ],
   },
 ];

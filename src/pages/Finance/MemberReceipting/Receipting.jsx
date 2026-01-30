@@ -38,6 +38,7 @@ const EMPTY_LINE = {
     accountName: "",
     description: "",
     amount: "",
+    availableBalance: 0,
 };
 
 
@@ -95,6 +96,11 @@ export default function Receipting() {
     const [customerAccount, setCustomerAccount] = useState([]);
 
     const [memberModalOpen, setMemberModalOpen] = useState(false);
+
+    const [AvailableBalance, setAvailableBalance] = useState(0);
+
+    const [postedDate, setPostedDate] = useState(() => new Date().toISOString().slice(0, 10));
+
 
 
     const totalAmount = useMemo(
@@ -160,6 +166,13 @@ export default function Receipting() {
     }, [selectedMemberId]);
 
 
+    //active or inactive account
+    const activeCustomerAccounts = useMemo(
+        () => customerAccount.filter(a => a.StatusDescription !== "Inactive"),
+        [customerAccount]
+    );
+
+
     // Handler when bank is selected
     const onBankSelect = (bankId) => {
         const bank = banks.find((b) => b.Id === bankId);
@@ -178,6 +191,7 @@ export default function Receipting() {
 
         setMemberName(`${member.IndividualFirstName} ${member.IndividualLastName}`);
         setCustomerNo(member.Reference2 || "");
+
     };
 
 
@@ -202,6 +216,7 @@ export default function Receipting() {
             postingPeriodId: "2F1DA0E0-B1DB-F011-B575-80CE62222714",
             primaryDescription: "Customer cash deposits batch",
             reference: reference || "BATCH-DEP-AUTO",
+            postedDate: postedDate,
 
             receipts: lines.map((l) => ({
                 totalValue: Number(l.amount),
@@ -295,38 +310,46 @@ export default function Receipting() {
 
         /* ===== LOGO / HEADER ===== */
 
+
         // Logo dimensions
         const logoWidth = 35;
         const logoHeight = 15;
 
-        // Add logo (LEFT)
+        // Center X position for logo
+        const pageCenterX = 105;
+        const logoX = pageCenterX - logoWidth / 2;
+
+        // Add logo (TOP CENTER)
         doc.addImage(
             logo,
             "PNG",
-            left,
-            y - 5,
+            logoX,
+            y,
             logoWidth,
             logoHeight
         );
 
+
+        // Move cursor below logo
+        y += logoHeight + 6;
+
         // Header text (CENTERED)
         doc.setFontSize(12);
         doc.setFont("times", "bold");
-        doc.text("RUBANI SACCO", 105, y, { align: "center" });
+        doc.text("RUBANI SACCO", pageCenterX, y, { align: "center" });
 
         y += 6;
         doc.setFontSize(9);
         doc.setFont("times", "normal");
-        doc.text("Giving wings to your savings", 105, y, { align: "center" });
+        doc.text("Giving wings to your savings", pageCenterX, y, { align: "center" });
 
         y += 8;
         doc.setFontSize(11);
         doc.setFont("times", "bold");
-        doc.text("CASH RECEIPT", 105, y, { align: "center" });
+        doc.text("CASH RECEIPT", pageCenterX, y, { align: "center" });
 
         // Divider line
         doc.line(left, y + 2, right, y + 2);
-
         y += 10;
 
 
@@ -334,16 +357,16 @@ export default function Receipting() {
         doc.setFontSize(9);
         doc.setFont("times", "normal");
 
-        doc.text(`Receipt No:`, left, y);
+        //doc.text(`Receipt No:`, left, y);
         doc.text(`Member No: ${customerNo}`, left, y + 6);
-        doc.text(`Staff No:`, left, y + 12);
+        doc.text(`Staff No: ${customerNo}`, left, y + 12);
         doc.text(`Name: ${memberName}`, left, y + 18);
 
         /* ===== RIGHT DETAILS ===== */
         doc.text(`Deposited/Receipt Date: ${date}`, 110, y);
         doc.text(`Posted Date: ${date}`, 110, y + 6);
         doc.text(`Payment Mode: ${paymentMethod}`, 110, y + 12);
-        doc.text(`Ref No: ${reference || "-"}`, 110, y + 18);
+        doc.text(`Ref No: ${customerNo || "-"}`, 110, y + 18);
 
         y += 30;
 
@@ -404,7 +427,6 @@ export default function Receipting() {
 
         doc.save(`Cash-Receipt-${customerNo}-${date}.pdf`);
     };
-
 
 
     return (
@@ -491,18 +513,31 @@ export default function Receipting() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div>
+                            <Label>Posted Date</Label>
+                            <Input
+                                type="date"
+                                value={postedDate}
+                                onChange={(e) => setPostedDate(e.target.value)}
+                                className="bg-white"
+                            />
+                        </div>
+
                     </div>
 
                     {/* LINE ITEMS */}
                     <div className="border rounded-sm">
                         {/* TABLE HEADER */}
-                        <div className="grid grid-cols-12 bg-gray-600 text-white border-b text-xs font-semibold uppercase rounded-t-sm">
+                        <div className="grid grid-cols-13 bg-gray-600 text-white border-b text-xs font-semibold uppercase rounded-t-sm">
                             <div className="col-span-3 p-2 border-r">Account</div>
-                            <div className="col-span-4 p-2 border-r">Description</div>
-                            <div className="col-span-3 p-2 text-right">Amount</div>
+                            <div className="col-span-2 p-2 border-r">Acc Balance</div>
+                            <div className="col-span-3 p-2 border-r">Description</div>
+                            <div className="col-span-3 p-2">Amount</div>
+                            <div className="col-span-1 p-2 text-right"></div>
+
                         </div>
                         {lines.map((l, i) => (
-                            <div key={i} className="grid grid-cols-12 border-b bg-gray-200">
+                            <div key={i} className="grid grid-cols-13 border-b bg-gray-200">
                                 <div className="col-span-3 p-2">
                                     <Select
                                         value={
@@ -513,30 +548,59 @@ export default function Receipting() {
                                         onValueChange={(v) => {
                                             const [customerAccountId, customerId, accountName] = v.split("|");
 
+                                            const selectedAccount = customerAccount.find(
+                                                (a) => a.Id === customerAccountId
+                                            );
+
+                                            let balance = 0;
+
+                                            if (selectedAccount) {
+                                                if (selectedAccount.CustomerAccountTypeProductCodeDescription === "Savings") {
+                                                    balance = selectedAccount.AvailableBalance;
+                                                } else if (selectedAccount.CustomerAccountTypeProductCodeDescription === "Loan") {
+                                                    balance = selectedAccount.BookBalance;
+                                                }
+                                            }
+
                                             updateLine(i, {
                                                 customerAccountId,
                                                 customerId,
                                                 accountName,
+                                                availableBalance: balance,
                                             });
                                         }}
+
                                     >
                                         <SelectTrigger className="bg-white">
                                             <SelectValue placeholder="Account" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {customerAccount.map((a) => (
-                                                <SelectItem
-                                                    key={a.Id}
-                                                    value={`${a.Id}|${a.CustomerId}|${a.CustomerAccountTypeTargetProductDescription}`}
-                                                >
-                                                    {a.CustomerAccountTypeTargetProductDescription}
-                                                </SelectItem>
+                                            {activeCustomerAccounts.length === 0 ? (
+                                                <div className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
+                                                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                                    No active accounts available for this member
+                                                </div>
+                                            ) : (
+                                                activeCustomerAccounts.map((a) => (
+                                                    <SelectItem
+                                                        key={a.Id}
+                                                        value={`${a.Id}|${a.CustomerId}|${a.CustomerAccountTypeTargetProductDescription}`}
+                                                    >
+                                                        {a.CustomerAccountTypeTargetProductDescription}
+                                                    </SelectItem>
+                                                ))
+                                            )}
 
-                                            ))}
                                         </SelectContent>
+
                                     </Select>
                                 </div>
-                                <div className="col-span-4 p-2">
+                                <div className="col-span-2 justify-end flex items-center">
+                                    <div className="bg-gray-50 w-full px-2 py-1 rounded-md shadow">
+                                        {money(l.availableBalance)}
+                                    </div>
+                                </div>
+                                <div className="col-span-3 p-2">
                                     <Input
                                         placeholder="Description"
                                         className="bg-white"
@@ -553,6 +617,7 @@ export default function Receipting() {
                                         onChange={(e) => updateLine(i, { amount: e.target.value })}
                                     />
                                 </div>
+
                                 <div className="col-span-2 p-2">
                                     {lines.length > 1 && (
                                         <Button size="icon" variant="ghost" onClick={() => removeLine(i)}>

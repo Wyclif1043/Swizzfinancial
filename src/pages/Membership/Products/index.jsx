@@ -10,6 +10,8 @@ import {
     FaPercentage,
     FaBalanceScale,
     FaLink,
+    FaSearch,
+    FaFilter,
 } from "react-icons/fa";
 
 import {
@@ -26,19 +28,43 @@ import LinkProductDrawer from "./LinkProductDrawer";
 
 export default function Products() {
     const [products, setProducts] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState(null);
-
-
     const [openDrawer, setOpenDrawer] = useState(false);
 
     //linkage product
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [coaFilter, setCoaFilter] = useState("all");
+    const [sortBy, setSortBy] = useState("name");
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [showFilters, setShowFilters] = useState(false);
+    const [uniqueCOAs, setUniqueCOAs] = useState([]);
 
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    useEffect(() => {
+        if (products.length > 0) {
+            // Extract unique Chart of Accounts for filter dropdown
+            const coas = [...new Set(products
+                .map(product => {
+                    // Safely handle different data types
+                    const coa = product.ChartOfAccountName;
+                    return coa ? String(coa).trim() : "";
+                })
+                .filter(coa => coa && coa !== "")
+            )];
+            setUniqueCOAs(coas);
+        }
+        applyFilters();
+    }, [products, searchQuery, statusFilter, coaFilter, sortBy, sortOrder]);
 
     const fetchProducts = async () => {
         try {
@@ -54,6 +80,111 @@ export default function Products() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const applyFilters = () => {
+        let filtered = [...products];
+
+        // Search filter - safely handle all data types
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(product => {
+                // Convert all values to strings safely for comparison
+                const description = String(product.Description || "").toLowerCase();
+                const paddedCode = String(product.PaddedCode || "").toLowerCase();
+                const chartOfAccountName = String(product.ChartOfAccountName || "").toLowerCase();
+                const chartOfAccountAccountCode = String(product.ChartOfAccountAccountCode || "").toLowerCase();
+                const chartOfAccountAccountName = String(product.ChartOfAccountAccountName || "").toLowerCase();
+                
+                return description.includes(query) ||
+                       paddedCode.includes(query) ||
+                       chartOfAccountName.includes(query) ||
+                       chartOfAccountAccountCode.includes(query) ||
+                       chartOfAccountAccountName.includes(query);
+            });
+        }
+
+        // Status filter
+        if (statusFilter !== "all") {
+            if (statusFilter === "default") {
+                filtered = filtered.filter(product => product.IsDefault);
+            } else if (statusFilter === "mandatory") {
+                filtered = filtered.filter(product => product.IsMandatory);
+            } else if (statusFilter === "locked") {
+                filtered = filtered.filter(product => product.IsLocked);
+            } else if (statusFilter === "active") {
+                filtered = filtered.filter(product => !product.IsLocked);
+            }
+        }
+
+        // COA filter - safely handle comparison
+        if (coaFilter !== "all") {
+            filtered = filtered.filter(product => 
+                String(product.ChartOfAccountName || "") === coaFilter
+            );
+        }
+
+        // Sorting - safely handle all data types
+        filtered.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (sortBy) {
+                case "name":
+                    valueA = String(a.Description || "").toLowerCase();
+                    valueB = String(b.Description || "").toLowerCase();
+                    break;
+                case "code":
+                    valueA = String(a.PaddedCode || "").toLowerCase();
+                    valueB = String(b.PaddedCode || "").toLowerCase();
+                    break;
+                case "apy":
+                    valueA = parseFloat(a.AnnualPercentageYield) || 0;
+                    valueB = parseFloat(b.AnnualPercentageYield) || 0;
+                    break;
+                case "coa":
+                    valueA = String(a.ChartOfAccountName || "").toLowerCase();
+                    valueB = String(b.ChartOfAccountName || "").toLowerCase();
+                    break;
+                case "maxDeposit":
+                    valueA = parseFloat(a.MaximumAllowedDeposit) || 0;
+                    valueB = parseFloat(b.MaximumAllowedDeposit) || 0;
+                    break;
+                case "minBalance":
+                    valueA = parseFloat(a.MinimumBalance) || 0;
+                    valueB = parseFloat(b.MinimumBalance) || 0;
+                    break;
+                default:
+                    valueA = String(a.Description || "").toLowerCase();
+                    valueB = String(b.Description || "").toLowerCase();
+            }
+
+            if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+            if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredProducts(filtered);
+    };
+
+    const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleSort = (field) => {
+        if (sortBy === field) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(field);
+            setSortOrder("asc");
+        }
+    };
+
+    const clearFilters = () => {
+        setSearchQuery("");
+        setStatusFilter("all");
+        setCoaFilter("all");
+        setSortBy("name");
+        setSortOrder("asc");
     };
 
     const handleDelete = async (id) => {
@@ -77,9 +208,7 @@ export default function Products() {
         });
     };
 
-
-
-    const openLInkageDrawer = (p) => {
+    const openLinkageDrawer = (p) => {
         setSelectedProduct(p);
         setDrawerOpen(true);
     };
@@ -90,6 +219,9 @@ export default function Products() {
             <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <FaWallet className="text-white" /> Savings Products
+                    <span className="text-sm font-normal ml-2">
+                        ({filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'})
+                    </span>
                 </h2>
                 <Button
                     className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
@@ -97,6 +229,114 @@ export default function Products() {
                 >
                     <FaPlus /> Add Product
                 </Button>
+            </div>
+
+            {/* Search and Filter Bar */}
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search products by name, code, COA name, or account code..."
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
+                    </div>
+
+                    {/* Filter Toggle Button */}
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <FaFilter />
+                        {showFilters ? 'Hide Filters' : 'Show Filters'}
+                    </Button>
+
+                    {/* Clear Filters Button */}
+                    {(searchQuery || statusFilter !== "all" || coaFilter !== "all") && (
+                        <Button
+                            variant="ghost"
+                            onClick={clearFilters}
+                            className="text-gray-600 hover:text-gray-800"
+                        >
+                            Clear Filters
+                        </Button>
+                    )}
+                </div>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                    <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Status Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Status Filter
+                            </label>
+                            <select
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="all">All Products</option>
+                                <option value="default">Default Products</option>
+                                <option value="mandatory">Mandatory Products</option>
+                                <option value="locked">Locked Products</option>
+                                <option value="active">Active Products</option>
+                            </select>
+                        </div>
+
+                        {/* COA Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Filter by Chart of Account
+                            </label>
+                            <select
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                value={coaFilter}
+                                onChange={(e) => setCoaFilter(e.target.value)}
+                            >
+                                <option value="all">All COAs</option>
+                                {uniqueCOAs.map((coa, index) => (
+                                    <option key={index} value={coa}>
+                                        {coa.length > 40 ? `${coa.substring(0, 40)}...` : coa}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Sort Options */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Sort By
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {['name', 'code', 'apy', 'coa', 'maxDeposit', 'minBalance'].map((field) => (
+                                    <Button
+                                        key={field}
+                                        size="sm"
+                                        variant={sortBy === field ? "default" : "outline"}
+                                        className="capitalize"
+                                        onClick={() => handleSort(field)}
+                                    >
+                                        {field === 'apy' ? 'APY' : 
+                                         field === 'maxDeposit' ? 'Max Deposit' :
+                                         field === 'minBalance' ? 'Min Balance' :
+                                         field === 'coa' ? 'COA' : field}
+                                        {sortBy === field && (
+                                            <span className="ml-1">
+                                                {sortOrder === 'asc' ? '↑' : '↓'}
+                                            </span>
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Table Header */}
@@ -120,24 +360,26 @@ export default function Products() {
                             </div>
                         ))}
                     </div>
-                ) : products.length > 0 ? (
+                ) : filteredProducts.length > 0 ? (
                     <div className="space-y-2">
-                        {products.map((p) => (
+                        {filteredProducts.map((p) => (
                             <div key={p.Id} className="bg-white rounded-lg shadow-lg border">
                                 {/* Main Row */}
                                 <div className="grid grid-cols-14 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                                     <span className="font-medium text-indigo-700 col-span-3">
-                                        {p.Description}
+                                        {p.Description || "N/A"}
                                     </span>
 
-                                    <span className="col-span-2">{p.PaddedCode}</span>
+                                    <span className="col-span-2">{p.PaddedCode || "N/A"}</span>
 
-                                    <span className="col-span-3">
-                                        {p.ChartOfAccountName}
+                                    <span className="col-span-3 truncate" title={p.ChartOfAccountName || ""}>
+                                        {p.ChartOfAccountName && p.ChartOfAccountName.length > 40 
+                                            ? `${String(p.ChartOfAccountName).substring(0, 40)}...` 
+                                            : String(p.ChartOfAccountName || "N/A")}
                                     </span>
 
                                     <span className="col-span-2 flex gap-1 items-center">
-                                        {p.AnnualPercentageYield}%
+                                        {p.AnnualPercentageYield || 0}%
                                     </span>
 
                                     {/* Expand Button */}
@@ -167,11 +409,12 @@ export default function Products() {
                                         <Button
                                             size="sm"
                                             className="bg-indigo-600 text-white col-span-1"
-                                            onClick={() => openLInkageDrawer(p)}
+                                            onClick={() => openLinkageDrawer(p)}
                                         >
                                             <FaLink /> Link
                                         </Button>
                                     </span>
+                                    
                                     {/* Actions */}
                                     <div className="col-span-1 flex justify-end">
                                         <DropdownMenu>
@@ -205,13 +448,13 @@ export default function Products() {
                                             </h3>
 
                                             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border text-sm">
-                                                <span><b>Max Deposit:</b> {p.MaximumAllowedDeposit}</span>
-                                                <span><b>Max Withdrawal:</b> {p.MaximumAllowedWithdrawal}</span>
-                                                <span><b>Min Balance:</b> {p.MinimumBalance}</span>
-                                                <span><b>Operating Balance:</b> {p.OperatingBalance}</span>
-                                                <span><b>Notice Amount:</b> {p.WithdrawalNoticeAmount}</span>
-                                                <span><b>Notice Period:</b> {p.WithdrawalNoticePeriod} days</span>
-                                                <span><b>Interval:</b> {p.WithdrawalInterval} days</span>
+                                                <span><b>Max Deposit:</b> {p.MaximumAllowedDeposit || "N/A"}</span>
+                                                <span><b>Max Withdrawal:</b> {p.MaximumAllowedWithdrawal || "N/A"}</span>
+                                                <span><b>Min Balance:</b> {p.MinimumBalance || "N/A"}</span>
+                                                <span><b>Operating Balance:</b> {p.OperatingBalance || "N/A"}</span>
+                                                <span><b>Notice Amount:</b> {p.WithdrawalNoticeAmount || "N/A"}</span>
+                                                <span><b>Notice Period:</b> {p.WithdrawalNoticePeriod || "N/A"} days</span>
+                                                <span><b>Interval:</b> {p.WithdrawalInterval || "N/A"} days</span>
                                             </div>
                                         </div>
 
@@ -222,10 +465,10 @@ export default function Products() {
                                             </h3>
 
                                             <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border text-sm">
-                                                <span><b>Account Code:</b> {p.ChartOfAccountAccountCode}</span>
-                                                <span><b>Account Name:</b> {p.ChartOfAccountAccountName}</span>
-                                                <span><b>Full COA:</b> {p.ChartOfAccountName}</span>
-                                                <span><b>Type:</b> {p.ChartOfAccountAccountType}</span>
+                                                <span><b>Account Code:</b> {p.ChartOfAccountAccountCode || "N/A"}</span>
+                                                <span><b>Account Name:</b> {p.ChartOfAccountAccountName || "N/A"}</span>
+                                                <span><b>Full COA:</b> {p.ChartOfAccountName || "N/A"}</span>
+                                                <span><b>Type:</b> {p.ChartOfAccountAccountType || "N/A"}</span>
                                             </div>
                                         </div>
 
@@ -241,7 +484,7 @@ export default function Products() {
                                                 <span><b>Locked:</b> {p.IsLocked ? "Yes" : "No"}</span>
                                                 <span><b>Auto Fee:</b> {p.AutomateLedgerFeeCalculation ? "On" : "Off"}</span>
                                                 <span><b>Throttle OTC:</b> {p.ThrottleOverTheCounterWithdrawals ? "Yes" : "No"}</span>
-                                                <span><b>Charge Type:</b> {p.ChargeTypeDescription}</span>
+                                                <span><b>Charge Type:</b> {p.ChargeTypeDescription || "N/A"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -252,16 +495,31 @@ export default function Products() {
                 ) : (
                     <div className="text-gray-500 text-center mt-4">
                         <img src={NotFoundImage} alt="Not Found" className="mx-auto w-42" />
-                        <p className="font-medium text-gray-400">No Savings Products Found.</p>
+                        <p className="font-medium text-gray-400">
+                            {searchQuery || statusFilter !== "all" || coaFilter !== "all" 
+                                ? "No products match your search criteria." 
+                                : "No Savings Products Found."}
+                        </p>
+                        {(searchQuery || statusFilter !== "all" || coaFilter !== "all") && (
+                            <Button
+                                variant="outline"
+                                className="mt-2"
+                                onClick={clearFilters}
+                            >
+                                Clear Filters
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>
+            
             {/* ADD PRODUCT DRAWER*/}
             <AddProducts
                 open={openDrawer}
                 onClose={() => setOpenDrawer(false)}
                 refresh={fetchProducts}
             />
+            
             {/* Linkage Drawer */}
             <LinkProductDrawer
                 open={drawerOpen}

@@ -86,8 +86,16 @@ import MemberReceipting from "./pages/Finance/MemberReceipting/index.jsx";
 import LoanSector from "./pages/Loaning/LoanSector/index.jsx";
 import LoanSubSector from "./pages/Loaning/LoanSubSector/index.jsx";
 import LoanCalculator from "./pages/Loaning/LoanCalculator/index.jsx";
-import LoanReports from "./pages/Loaning/LoanReports/index.jsx";
+import LoanReports from "./pages/Reports/LoanReports/index.jsx";
 import Creditbatches from "./pages/Finance/Creditbatches/index.jsx";
+import FinanceReports from "./pages/Reports/FinanceReports/index.jsx";
+import Insurance from "./pages/Membership/Insurance/index.jsx";
+import MemberExit from "./pages/Membership/MemberExit/index.jsx";
+import InterTransfer from "./pages/Finance/InterTransfer/index.jsx";
+import GenerateSasraForm from "./pages/Reports/GenerateSasraForm/index.jsx";
+import MemberStatement from "./pages/Reports/MemberStatement/index.jsx";
+import Reports from "./pages/Reports/index.jsx";
+import LoanRegister from "./pages/Loaning/LoanRegister/index.jsx";
 
 
 
@@ -146,6 +154,7 @@ export default function App() {
           <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
           <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} />
           <Route path="Finance/Creditbatches" element={<Creditbatches />} />
+          <Route path="Finance/InterTransfer" element={<InterTransfer />} />
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
 
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />
@@ -190,6 +199,8 @@ export default function App() {
           <Route path="Membership/Products" element={<Products />} />
           <Route path="Membership/Members" element={<Members />} />
           <Route path="Membership/customersAccount" element={<CustomersAccounts />} />
+          <Route path="Membership/Insurance" element={<Insurance />} />
+          <Route path="Membership/MemberExit" element={<MemberExit />} />
 
           {/**Loaning */}
           <Route path="Loaning" element={<Loaning />} />
@@ -198,8 +209,15 @@ export default function App() {
           <Route path="Loaning/LoanSector" element={<LoanSector />} />
           <Route path="Loaning/LoanSubSector" element={<LoanSubSector />} />
           <Route path="Loaning/LoanCalculator" element={<LoanCalculator />} />
-          <Route path="Loaning/LoanReports" element={<LoanReports />} />
+          <Route path="Loaning/LoanRegister" element={<LoanRegister />} />
 
+
+          {/**Reports */}
+          <Route path="Reports" element={<Reports />} />
+          <Route path="Reports/LoanReports" element={<LoanReports />} />
+          <Route path="Reports/FinancialReports" element={<FinanceReports />} />
+          <Route path="Reports/GenerateSasraForm" element={<GenerateSasraForm />} />
+          <Route path="Reports/MemberStatement" element={<MemberStatement />} />
         </Route>
       </Routes>
     </Router>

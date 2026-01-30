@@ -29,6 +29,7 @@ export default function LoanAppraisalDrawer({
         AppraisedAmountRemarks: "",
         AppraisedNetIncome: 0,
         AppraisedAbility: 0,
+        AppraisedDate: new Date().toISOString().split("T")[0],
 
         LoanRegistrationMaximumEntitled: 0,
         LoanRegistrationNetIncome: 0,
@@ -49,9 +50,64 @@ export default function LoanAppraisalDrawer({
 
 
 
+
+    // const update = (key, value) => {
+    //     setForm(prev => {
+    //         const updated = { ...prev, [key]: Number(value) };
+
+    //         // Recalculate Total Income if relevant fields change
+    //         if (
+    //             key === "LoanRegistrationNetIncome" ||
+    //             key === "LoanRegistrationTotalAllowance" ||
+    //             key === "LoanRegistrationTotalDeduction"
+    //         ) {
+    //             updated.LoanRegistrationTotalIncome =
+    //                 (updated.LoanRegistrationNetIncome || 0) +
+    //                 (updated.LoanRegistrationTotalAllowance || 0) -
+    //                 (updated.LoanRegistrationTotalDeduction || 0);
+    //         }
+
+    //         return updated;
+    //     });
+    // };
+
+
     const update = (key, value) => {
-        setForm(prev => ({ ...prev, [key]: value }));
+        setForm(prev => {
+            const updated = {
+                ...prev,
+                [key]:
+                    key.startsWith("LoanRegistration") ||
+                        key.startsWith("Appraised") && key !== "AppraisedDate"
+                        ? Number(value)
+                        : value
+            };
+
+            // Recalculate Total Income if relevant fields change
+            if (
+                key === "LoanRegistrationNetIncome" ||
+                key === "LoanRegistrationTotalAllowance" ||
+                key === "LoanRegistrationTotalDeduction"
+            ) {
+                updated.LoanRegistrationTotalIncome =
+                    (updated.LoanRegistrationNetIncome || 0) +
+                    (updated.LoanRegistrationTotalAllowance || 0) -
+                    (updated.LoanRegistrationTotalDeduction || 0);
+
+                // Sync appraisal fields
+                updated.AppraisedAmount = updated.LoanRegistrationTotalIncome;
+                updated.AppraisedNetIncome = updated.LoanRegistrationNetIncome;
+            }
+
+            return updated;
+        });
     };
+
+
+
+
+
+
 
     const payload = {
         Id: loanCaseId,
@@ -62,6 +118,8 @@ export default function LoanAppraisalDrawer({
         AppraisedAmountRemarks: form.AppraisedAmountRemarks || null,
         AppraisedNetIncome: Number(form.AppraisedNetIncome),
         AppraisedAbility: Number(form.AppraisedAbility),
+        AppraisedDate: form.AppraisedDate ? new Date(form.AppraisedDate) : null,
+
 
         LoanRegistrationMaximumEntitled: Number(form.LoanRegistrationMaximumEntitled),
         LoanRegistrationNetIncome: Number(form.LoanRegistrationNetIncome),
@@ -81,12 +139,70 @@ export default function LoanAppraisalDrawer({
 
 
 
+    const isTwoThirdRuleBroken = () => {
+        const basicIncome = Number(form.LoanRegistrationNetIncome || 0);
+        const allowance = Number(form.LoanRegistrationTotalAllowance || 0);
+        const totalDeduction = Number(form.LoanRegistrationTotalDeduction || 0);
+
+        const grossIncome = basicIncome + allowance;
+        const maxAllowedDeduction = (2 / 3) * grossIncome;
+
+        return {
+            broken: totalDeduction > maxAllowedDeduction,
+            grossIncome,
+            totalDeduction,
+            maxAllowedDeduction,
+        };
+    };
+
+
+
+
     console.log(payload);
     const handleSubmit = async () => {
         if (!form.loanAuditOption) {
-            Swal.fire("Validation", "Please select an audit option", "warning");
+            Swal.fire("Validation", "Please select an appraise option", "warning");
             return;
         }
+
+
+        // ===== 2/3 RULE CHECK =====
+        const rule = isTwoThirdRuleBroken();
+
+        if (rule.broken) {
+            const confirm = await Swal.fire({
+                title: "⚠️ 2/3 Rule Breach Detected",
+                html: `
+                    <p><strong>Gross Income (Basic + Allowance):</strong> 
+                    KES ${rule.grossIncome.toLocaleString()}</p>
+
+                    <p><strong>Total Deduction:</strong> 
+                    KES ${rule.totalDeduction.toLocaleString()}</p>
+
+                    <p><strong>Maximum Allowed Deduction (⅔ Rule):</strong> 
+                    KES ${rule.maxAllowedDeduction.toLocaleString()}</p>
+
+                    <hr/>
+                    <p class="text-sm text-red-600">
+                        Total deductions exceed 2/3 of gross income.
+                        Are you sure you want to proceed?
+                    </p>
+                `,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Proceed Anyway",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#e11d48",
+            });
+
+            if (!confirm.isConfirmed) {
+                return; // stop submission
+            }
+        }
+
+        // ===== PROCEED WITH SUBMISSION =====
+
+
 
         setLoading(true);
         try {
@@ -144,7 +260,7 @@ export default function LoanAppraisalDrawer({
             startY: 35,
             head: [["Field", "Value"]],
             body: [
-                ["Customer", loan.CustomerFullName],
+                ["Customer", loan.CustomerFullName.replace(/^(mr|mrs|ms|miss|dr|prof)\.?\s+/i, "").trim()],
                 ["Loan Product", loan.LoanProductDescription],
                 ["Loan Purpose", loan.LoanPurposeDescription],
                 ["Amount Applied", `Ksh ${loan.AmountApplied}`],
@@ -308,19 +424,107 @@ export default function LoanAppraisalDrawer({
                             )}
 
 
+
+
+
+
+
+
+
+
+
+                            {/* LOAN REGISTRATION */}
+                            <div className="bg-gray-200 rounded-md p-4">
+                                <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl">Loan Registration Figures</h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+
+                                    <div>
+                                        <Label>Basic Income</Label>
+                                        <Input label="Net Income" type="number"
+                                            value={form.LoanRegistrationNetIncome}
+                                            onChange={e => update("LoanRegistrationNetIncome", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Total Allowance</Label>
+                                        <Input label="Total Allowance" type="number"
+                                            value={form.LoanRegistrationTotalAllowance}
+                                            onChange={e => update("LoanRegistrationTotalAllowance", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Total Deduction</Label>
+                                        <Input label="Total Deduction" type="number"
+                                            value={form.LoanRegistrationTotalDeduction}
+                                            onChange={e => update("LoanRegistrationTotalDeduction", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Total Income</Label>
+                                        <Input
+                                            label="Total Income"
+                                            type="number"
+                                            value={form.LoanRegistrationTotalIncome}
+                                            readOnly
+                                            className="bg-gray-100 cursor-not-allowed"
+                                        />
+                                    </div>
+                                    {/* <div>
+                                        <Label>Maximum Entitle</Label>
+                                        <Input label="Maximum Entitled" type="number"
+                                            value={form.LoanRegistrationMaximumEntitled}
+                                            onChange={e => update("LoanRegistrationMaximumEntitled", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Ability To Pay</Label>
+                                        <Input label="Ability To Pay" type="number"
+                                            value={form.LoanRegistrationAbilityToPay}
+                                            onChange={e => update("LoanRegistrationAbilityToPay", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div> */}
+
+                                    {/* <div>
+                                        <Label>Ability Over Loan Term</Label>
+                                        <Input label="Ability Over Loan Term" type="number"
+                                            value={form.LoanRegistrationAbilityToPayOverLoanTerm}
+                                            onChange={e => update("LoanRegistrationAbilityToPayOverLoanTerm", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Loan + Interest</Label>
+                                        <Input label="Loan + Interest" type="number"
+                                            value={form.LoanRegistrationLoanPlusInterest}
+                                            onChange={e => update("LoanRegistrationLoanPlusInterest", e.target.value)}
+                                            className="bg-white"
+                                        />
+                                    </div> */}
+                                </div>
+                            </div>
+
+
+
+
                             <Card className="p-4 space-y-6">
                                 <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl">Appraisal Decision</h3>
 
                                 {/* AUDIT OPTION */}
                                 <div>
-                                    <Label>Audit Option</Label>
+                                    <Label>Appraised Option</Label>
                                     <select
                                         className="w-full border rounded-md p-2"
                                         value={form.loanAuditOption}
                                         onChange={e => update("loanAuditOption", e.target.value)}
                                     >
                                         <option value="">Select option</option>
-                                        <option value="1">Verify</option>
+                                        <option value="1">Appraise</option>
                                         <option value="2">Reject</option>
                                         <option value="4">Defer</option>
                                     </select>
@@ -335,7 +539,7 @@ export default function LoanAppraisalDrawer({
                                     </div>
 
                                     <div>
-                                        <Label>Appraised Net Income</Label>
+                                        <Label>Appraised Basic Income</Label>
                                         <Input type="number" value={form.AppraisedNetIncome}
                                             onChange={e => update("AppraisedNetIncome", e.target.value)} />
                                     </div>
@@ -346,103 +550,45 @@ export default function LoanAppraisalDrawer({
                                             onChange={e => update("AppraisedAbility", e.target.value)} />
                                     </div>
 
-                                    <div>
+                                    {/* <div>
                                         <Label>Total Loans Balance</Label>
                                         <Input type="number" value={form.TotalLoansBalance}
                                             onChange={e => update("TotalLoansBalance", e.target.value)} />
-                                    </div>
+                                    </div> */}
                                     <div>
                                         <Label>Appraisal Remarks</Label>
                                         <Input value={form.AppraisalRemarks}
                                             onChange={e => update("AppraisalRemarks", e.target.value)} />
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <Label>Appraised Amount Remarks</Label>
                                         <Input value={form.AppraisedAmountRemarks}
                                             onChange={e => update("AppraisedAmountRemarks", e.target.value)} />
+                                    </div> */}
+
+
+                                    <div>
+                                        <Label>Appraised Date</Label>
+                                        <Input
+                                            value={form.AppraisedDate}
+                                            onChange={e => update("AppraisedDate", e.target.value)}
+                                            type="date"
+                                            className="bg-white"
+                                        />
                                     </div>
+
                                 </div>
 
 
 
 
 
-                                {/* LOAN REGISTRATION */}
-                                <div className="bg-gray-200 rounded-md p-4">
-                                    <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl">Loan Registration Figures</h3>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                                        <div>
-                                            <Label>Maximum Entitle</Label>
-                                            <Input label="Maximum Entitled" type="number"
-                                                value={form.LoanRegistrationMaximumEntitled}
-                                                onChange={e => update("LoanRegistrationMaximumEntitled", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Net Income</Label>
-                                            <Input label="Net Income" type="number"
-                                                value={form.LoanRegistrationNetIncome}
-                                                onChange={e => update("LoanRegistrationNetIncome", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Total Allowance</Label>
-                                            <Input label="Total Allowance" type="number"
-                                                value={form.LoanRegistrationTotalAllowance}
-                                                onChange={e => update("LoanRegistrationTotalAllowance", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Total Deduction</Label>
-                                            <Input label="Total Deduction" type="number"
-                                                value={form.LoanRegistrationTotalDeduction}
-                                                onChange={e => update("LoanRegistrationTotalDeduction", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Total Income</Label>
-                                            <Input label="Total Income" type="number"
-                                                value={form.LoanRegistrationTotalIncome}
-                                                onChange={e => update("LoanRegistrationTotalIncome", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Ability To Pay</Label>
-                                            <Input label="Ability To Pay" type="number"
-                                                value={form.LoanRegistrationAbilityToPay}
-                                                onChange={e => update("LoanRegistrationAbilityToPay", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Ability Over Loan Term</Label>
-                                            <Input label="Ability Over Loan Term" type="number"
-                                                value={form.LoanRegistrationAbilityToPayOverLoanTerm}
-                                                onChange={e => update("LoanRegistrationAbilityToPayOverLoanTerm", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>Loan + Interest</Label>
-                                            <Input label="Loan + Interest" type="number"
-                                                value={form.LoanRegistrationLoanPlusInterest}
-                                                onChange={e => update("LoanRegistrationLoanPlusInterest", e.target.value)}
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
 
                                 {/* INVESTMENTS */}
                                 <h3 className="font-semibold pt-4">Investments</h3>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <Label>Investments Balance</Label>
                                         <Input label="Investments Balance" type="number"
@@ -456,13 +602,14 @@ export default function LoanAppraisalDrawer({
                                             value={form.LoanProductTotalSharesInvestmentsBalance}
                                             onChange={e => update("LoanProductTotalSharesInvestmentsBalance", e.target.value)} />
                                     </div>
-                                </div>
+                                </div> */}
 
-                                <div>
+
+                                {/* <div>
                                     <Label>Appraisal Option Description</Label>
                                     <Input value={form.LoanAppraisalOptionDescription}
                                         onChange={e => update("LoanAppraisalOptionDescription", e.target.value)} />
-                                </div>
+                                </div> */}
                             </Card>
 
 
@@ -496,3 +643,10 @@ export default function LoanAppraisalDrawer({
         </AnimatePresence >
     );
 }
+
+
+
+
+
+
+

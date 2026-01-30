@@ -41,68 +41,106 @@ function ViewDetailPostedReceipt({ open, onClose, receiptId }) {
 
         const doc = new jsPDF("p", "mm", "a4");
 
-        const left = 14;
-        const right = 196;
+        const left = 15;
+        const right = 195;
         let y = 15;
 
-        /* ========== PDF HEADER (LOGO + TITLE) ========== */
+        /* ===== LOGO / HEADER (MATCHES generateReceiptPDF) ===== */
 
-        // Logo
-        doc.addImage(logo, "PNG", left, y - 5, 35, 18);
+        // Logo dimensions
+        const logoWidth = 35;
+        const logoHeight = 15;
 
-        // SACCO Name
+        // Page center
+        const pageCenterX = 105;
+        const logoX = pageCenterX - logoWidth / 2;
+
+        // Add logo (TOP CENTER)
+        doc.addImage(logo, "PNG", logoX, y, logoWidth, logoHeight);
+
+        // Move cursor below logo
+        y += logoHeight + 6;
+
+        // SACCO name
+        doc.setFontSize(12);
         doc.setFont("times", "bold");
-        doc.setFontSize(14);
-        doc.text("RUBANI SACCO", 105, y, { align: "center" });
+        doc.text("RUBANI SACCO", pageCenterX, y, { align: "center" });
 
-        // Tagline
         y += 6;
         doc.setFontSize(9);
         doc.setFont("times", "normal");
-        doc.text("Giving wings to your savings", 105, y, { align: "center" });
+        doc.text("Giving wings to your savings", pageCenterX, y, { align: "center" });
 
-        // Document Title
         y += 8;
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.setFont("times", "bold");
-        doc.text("POSTED RECEIPT", 105, y, { align: "center" });
+        doc.text("POSTED RECEIPT", pageCenterX, y, { align: "center" });
 
-        // Divider
-        doc.line(left, y + 3, right, y + 3);
+        // Divider line
+        doc.line(left, y + 2, right, y + 2);
+        y += 10;
 
-        y += 12;
 
-        /* ========== RECEIPT DETAILS ========== */
+
+        /* ===== RECEIPT DETAILS (SIDE BY SIDE) ===== */
+
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.text("Receipt Details", left, y);
-        y += 6;
+        y += 8;
 
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
 
-        autoTable(doc, {
-            startY: y,
-            body: [
-                ["Reference", data.receipt.Reference],
-                ["Branch", data.receipt.BranchDescription],
-                ["Posting Period", data.receipt.PostingPeriodDescription],
-                ["Transaction", data.receipt.TransactionCodeDescription],
-                ["Total Amount (KES)", data.receipt.TotalValue.toLocaleString()],
-            ],
-            theme: "grid",
-            styles: { fontSize: 9 },
-            columnStyles: {
-                0: { fontStyle: "bold", cellWidth: 50 },
-                1: { cellWidth: 120 },
-            },
-            margin: { left, right: 14 },
-        });
+        // Column positions
+        const col1LabelX = left;
+        const col1ValueX = left + 35;
 
-        y = doc.lastAutoTable.finalY + 10;
+        const col2LabelX = 110;
+        const col2ValueX = col2LabelX + 35;
 
-        /* ========== JOURNAL ENTRIES ========== */
+        // Row 1
+        doc.setFont("helvetica", "bold");
+        doc.text("Reference:", col1LabelX, y);
+        doc.text("Posting Period:", col2LabelX, y);
 
+        doc.setFont("helvetica", "normal");
+        doc.text(data.receipt.Reference, col1ValueX, y);
+        doc.text(data.receipt.PostingPeriodDescription, col2ValueX, y);
+
+        y += 6;
+
+        // Row 2
+        doc.setFont("helvetica", "bold");
+        doc.text("Branch:", col1LabelX, y);
+        doc.text("Transaction:", col2LabelX, y);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(data.receipt.BranchDescription, col1ValueX, y);
+        doc.text(data.receipt.TransactionCodeDescription, col2ValueX, y);
+
+        y += 6;
+
+        // Row 3
+        doc.setFont("helvetica", "bold");
+        doc.text("Total Amount (KES):", col1LabelX, y);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(
+            Number(data.receipt.TotalValue).toLocaleString(),
+            col1ValueX,
+            y
+        );
+
+        y += 10;
+
+
+        // y = doc.lastAutoTable.finalY + 10;
+        // Divider line
+        doc.line(left, y + 2, right, y + 2);
+        y += 10;
+
+        /* ===== JOURNAL ENTRIES ===== */
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
         doc.text("Journal Entries", left, y);
@@ -126,42 +164,17 @@ function ViewDetailPostedReceipt({ open, onClose, receiptId }) {
             columnStyles: {
                 2: { halign: "right" },
             },
-            margin: { left, right: 14 },
+            margin: { left, right: 15 },
         });
 
-        // Move cursor AFTER journal table
         y = doc.lastAutoTable.finalY + 10;
 
-
-
-        // Summary
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("Summary", 14, y);
-        y += 6;
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-
-        const summaryData = [
-            ["Total Entries", data.summary.TotalEntries],
-            ["Min Amount", data.summary.MinAmount],
-            ["Max Amount", data.summary.MaxAmount],
-            ["Average Amount", data.summary.AverageAmount],
-        ];
-
-        autoTable(doc, {
-            startY: y,
-            body: summaryData,
-            theme: "grid",
-            styles: { fontSize: 9 },
-            columnStyles: { 0: { fontStyle: "bold", cellWidth: 50 }, 1: { cellWidth: 60 } },
-        });
-
-        // Footer
+        /* ===== FOOTER ===== */
         const pages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pages; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
+            doc.setFont("times", "normal");
             doc.text(
                 `Generated on ${new Date().toLocaleString()} | Page ${i} of ${pages}`,
                 105,
@@ -172,6 +185,7 @@ function ViewDetailPostedReceipt({ open, onClose, receiptId }) {
 
         doc.save(`Receipt_${data.receipt.Reference}.pdf`);
     };
+
 
     return (
         <AnimatePresence>
@@ -263,9 +277,9 @@ function ViewDetailPostedReceipt({ open, onClose, receiptId }) {
                                         {/* Summary */}
                                         <div className="bg-white p-4 rounded-lg border text-sm">
                                             <p><strong>Total Entries:</strong> {data.summary.TotalEntries}</p>
-                                            <p><strong>Min:</strong> {data.summary.MinAmount}</p>
+                                            {/* <p><strong>Min:</strong> {data.summary.MinAmount}</p>
                                             <p><strong>Max:</strong> {data.summary.MaxAmount}</p>
-                                            <p><strong>Average:</strong> {data.summary.AverageAmount}</p>
+                                            <p><strong>Average:</strong> {data.summary.AverageAmount}</p> */}
                                         </div>
                                         <div className="mt-3 flex items-center justify-end">
                                             <Button

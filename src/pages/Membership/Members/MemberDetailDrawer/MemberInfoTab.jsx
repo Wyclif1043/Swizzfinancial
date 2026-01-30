@@ -140,36 +140,35 @@ export default function MemberInfoTab({ customer }) {
     return (
         <>
             <div className="flex justify-end mb-4">
-                <button
+                {/* <button
                     onClick={handlePrintPDF}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
                 >
                     Export PDF
-                </button>
+                </button> */}
             </div>
 
             <Section title="Personal Details">
+
+                <Field label="Member No" value={customer.Reference2} />
                 <Field label="Full Name" value={`${customer.IndividualFirstName} ${customer.IndividualLastName}`} />
-                <Field label="Gender" value={customer.IndividualGenderDescription} />
+                {/* <Field label="Gender" value={customer.IndividualGenderDescription} /> */}
                 <Field label="Birth Date" value={customer.IndividualBirthDate && new Date(customer.IndividualBirthDate).toLocaleDateString()} />
                 <Field label="Age" value={customer.Age} />
+
             </Section>
 
             <Section title="Identification">
                 <Field label="ID Number" value={customer.IndividualIdentityCardNumber} />
-                <Field label="Card Type" value={customer.IndividualIdentityCardTypeDescription} />
-                <Field label="Record Status" value={customer.RecordStatusDescription} />
-            </Section>
+                {/* <Field label="Card Type" value={customer.IndividualIdentityCardTypeDescription} /> */}
+                <Field label="Type of Account" value={customer.TypeDescription} />
+                <Field label="Personal Identification Number" value={customer.PersonalIdentificationNumber} />
+                <Field label="File Number" value={customer.Reference3} />
+                <Field label="Account No" value={customer.Reference1} />
 
-            <Section title="Employment">
-                <Field label="Designation" value={customer.IndividualEmploymentDesignation} />
-                <Field label="Terms of Service" value={customer.IndividualEmploymentTermsOfServiceDescription} />
-                <Field label="Payroll Number" value={customer.IndividualPayrollNumbers} />
             </Section>
 
             <Section title="Contact & Address">
-                <Field label="City" value={customer.AddressCity} />
-                <Field label="Street" value={customer.AddressStreet} />
                 <Field label="Email" value={customer.AddressEmail} />
                 <Field label="Mobile" value={customer.AddressMobileLine} />
             </Section>

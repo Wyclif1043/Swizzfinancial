@@ -12,26 +12,40 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
+import { nationalities, banks } from "./Selectdata";
+
+
 
 
 export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
-
     const [branches, setBranches] = useState([]);
     const [stations, setStations] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [checkingId, setCheckingId] = useState(false);
+    const [idExists, setIdExists] = useState(false);
+    const [showNationalityDropdown, setShowNationalityDropdown] = useState(false);
+
+
+
 
     const [administrativeDivision, setAdministrativeDivision] = useState([]);
     const [errors, setErrors] = useState({
         addressEmail: "",
         addressMobileLine: "",
         personalIdentificationNumber: "",
+        individualIdentityCardNumber: "",
     });
+
+    // LocalStorage Key
+    const DRAFT_KEY = "member_registration_draft";
+
 
 
     // ========================
     // MASTER FORM STATE
     // ========================
-    const [customer, setCustomer] = useState({
+
+    const initialCustomerState = {
         stationId: "",
         branchId: "",
         type: "",
@@ -46,7 +60,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         individualSalutation: 1,
         individualGender: "",
         individualMaritalStatus: "",
-        individualNationality: 1,
+        individualNationality: "",
         individualBirthDate: "",
         individualEmploymentDesignation: "",
         individualEmploymentTermsOfService: "",
@@ -67,12 +81,14 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         recruitedBy: "SYSTEM",
         recordStatus: 1,
         createdBy: "SYSTEM",
-        createdDate: "",
+        createdDate: new Date().toISOString().split('T')[0], // Default to today
         reference1: "",
         bankName: "",
         branchName: "",
-    });
+        registrationDate: new Date().toISOString().split('T')[0]
 
+    };
+    const [customer, setCustomer] = useState(initialCustomerState);
     const [nextOfKins, setNextOfKins] = useState([
         {
             salutation: "",
@@ -94,7 +110,28 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         },
     ]);
 
+    const handleSafeClose = () => {
+        // Check if user has entered data (e.g., checking if names are filled)
+        const hasData = customer.individualFirstName || customer.individualLastName || customer.individualIdentityCardNumber;
 
+        if (hasData) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You have unsaved changes. The draft will be saved, but do you want to close this window?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#4f46e5",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, close it"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onClose();
+                }
+            });
+        } else {
+            onClose();
+        }
+    };
 
     const update = (key, value) => {
         setCustomer(prev => ({ ...prev, [key]: value }));
@@ -103,7 +140,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
     const [step, setStep] = useState(1);
     const next = () => setStep(s => s + 1);
     const back = () => setStep(s => s - 1);
-
 
     const updateCustomer = (key, value) => {
         setCustomer(prev => ({ ...prev, [key]: value }));
@@ -114,8 +150,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         updated[index][key] = value;
         setNextOfKins(updated);
     };
-
-
 
     const addNextOfKin = () => {
         if (totalNokPercentage >= 100) {
@@ -150,7 +184,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         ]);
     };
 
-
     const removeNextOfKin = (index) => {
         if (nextOfKins.length === 1) return; // prevent removing the last one
         setNextOfKins(prev => prev.filter((_, i) => i !== index));
@@ -163,12 +196,177 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
 
     console.log(payload);
 
+
+
+
+
+    // ========================
+    // VALIDATE ID NUMBER
+    // ========================
+    const checkIfIdExists = async (idNumber) => {
+        const trimmedId = idNumber?.trim();
+
+        if (!trimmedId || trimmedId.length < 5) {
+            setIdExists(false);
+            return;
+        }
+
+        setCheckingId(true);
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/customers/search/identity-card?identityCardNumber=${trimmedId}&exactMatch=true`,
+                {
+                    headers: { "ngrok-skip-browser-warning": "true" },
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const exists = Array.isArray(data?.data) && data.data.length > 0;
+
+                setIdExists(exists);
+                setErrors(prev => ({
+                    ...prev,
+                    individualIdentityCardNumber: exists
+                        ? "This ID number is already registered"
+                        : ""
+                }));
+            }
+        } catch (err) {
+            console.error("Error checking ID:", err);
+        } finally {
+            setCheckingId(false);
+        }
+    };
+
+
+
+
+
+
+
+    // ========================
+    // PERSISTENCE LOGIC
+    // ========================
+
+    // LOAD DRAFT ON MOUNT
+
+    // Add a ref to track if initial load happened
+    const isLoaded = React.useRef(false);
+
+    useEffect(() => {
+        if (open) {
+            const savedDraft = localStorage.getItem(DRAFT_KEY);
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    if (parsed.customer) setCustomer(parsed.customer);
+                    if (parsed.nextOfKins) setNextOfKins(parsed.nextOfKins);
+                    if (parsed.step) setStep(parsed.step);
+                } catch (err) {
+                    console.error("Failed to parse draft", err);
+                }
+            }
+            isLoaded.current = true;
+        }
+    }, [open]); // Only load when drawer opens
+
+
+
+    // AUTO-SAVE ON EVERY CHANGE
+    // Update your SAVE effect
+    useEffect(() => {
+        if (!isLoaded.current || !open) return;
+
+        const draftData = {
+            customer,
+            nextOfKins,
+            step,
+            lastSaved: new Date().toISOString()
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+    }, [customer, nextOfKins, step, open]);
+
+
+
+
+    // ========================
+    // CLEAR DRAFT FUNCTION
+    // ========================
+    const clearDraft = () => {
+        // 1. Remove from Browser Storage
+        localStorage.removeItem(DRAFT_KEY);
+
+        // 2. Reset React State to initial values
+        setCustomer(initialCustomerState);
+        setNextOfKins([
+            {
+                salutation: "",
+                gender: "",
+                relationship: "",
+                firstName: "",
+                lastName: "",
+                identityCardType: 1,
+                identityCardNumber: "",
+                addressAddressLine1: "",
+                addressStreet: "",
+                addressPostalCode: "",
+                addressCity: "",
+                addressEmail: "",
+                addressMobileLine: "",
+                nominatedPercentage: 0,
+                remarks: "",
+                createdBy: "SYSTEM",
+            },
+        ]);
+        setStep(1);
+
+        // 3. Reset internal "isLoaded" ref so auto-save doesn't immediately 
+        // rewrite the empty state back into localStorage until user types again
+        isLoaded.current = false;
+
+    }
+
+
     // ========================
     // SUBMIT HANDLER
     // ========================
     const handleSubmit = async () => {
-        setLoading(true);
+        // Validate required fields
+        if (!customer.individualFirstName || !customer.individualLastName) {
+            Swal.fire("Error", "First name and last name are required", "error");
+            return;
+        }
 
+        if (!customer.individualIdentityCardNumber) {
+            Swal.fire("Error", "ID/Passport number is required", "error");
+            return;
+        }
+
+        if (idExists) {
+            Swal.fire("Error", "This ID number is already registered. Please use a different ID.", "error");
+            return;
+        }
+
+        // Validate email if provided
+        if (customer.addressEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.addressEmail)) {
+            Swal.fire("Error", "Please enter a valid email address", "error");
+            return;
+        }
+
+        // Validate mobile if provided
+        if (customer.addressMobileLine && !/^\+254(7|1)\d{8}$/.test(customer.addressMobileLine)) {
+            Swal.fire("Error", "Phone must start with +254 and be 12 digits", "error");
+            return;
+        }
+
+        // Validate PIN format if provided
+        if (customer.personalIdentificationNumber && !/^[A-Z]\d{9}[A-Z]$/.test(customer.personalIdentificationNumber)) {
+            Swal.fire("Error", "KRA PIN must be in format A123456789B", "error");
+            return;
+        }
+
+        setLoading(true);
 
 
         try {
@@ -186,7 +384,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
 
             if (!response.ok) throw new Error("Failed to submit");
 
-
             console.log(response);
             const data = await response.json();
 
@@ -194,20 +391,21 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
 
             if (data.success) {
                 Swal.fire("Success", data.message, "success");
-                refresh();
+                clearDraft(); // <--- CLEAR DRAFT ON SUCCESS
+
+                //refresh();
+                //onClose();
+                if (refresh) refresh();
+                if (onClose) onClose();
             } else {
                 Swal.fire("Error", data.message, "error");
             }
-
-
-            onClose();
         } catch (err) {
             Swal.fire("Error", "Failed to register member", "error");
         } finally {
             setLoading(false);
         }
     };
-
 
     const loadStations = async () => {
         try {
@@ -222,7 +420,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
             console.error("Failed to load stations", err);
         }
     };
-
 
     const loadAdministrativeDivision = async () => {
         try {
@@ -275,17 +472,26 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
         update(key, base64);
     };
 
-
-
     const totalNokPercentage = nextOfKins.reduce(
         (sum, k) => sum + Number(k.nominatedPercentage || 0),
         0
     );
 
+    // Get today's date for max date validation
+    const today = new Date().toISOString().split('T')[0];
 
-    // ========================
-    // UI RENDER
-    // ========================
+    // Filter nationalities based on search
+    const [nationalitySearch, setNationalitySearch] = useState("");
+    const filteredNationalities = nationalities.filter(nationality =>
+        nationality.toLowerCase().includes(nationalitySearch.toLowerCase())
+    );
+
+    // Filter banks based on search
+    const [bankSearch, setBankSearch] = useState("");
+    const filteredBanks = banks.filter(bank =>
+        bank.toLowerCase().includes(bankSearch.toLowerCase())
+    );
+
     return (
         <AnimatePresence>
             {open && (
@@ -340,7 +546,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                 ))}
                             </aside>
 
-
                             {/* RIGHT CONTENT */}
                             <main className="col-span-9 p-6 overflow-y-auto">
 
@@ -349,10 +554,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                     <section>
                                         <h3 className="text-lg font-semibold mb-3 bg-indigo-700 text-white p-3 rounded-2xl">Personal Information</h3>
 
-
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-
                                             <div>
                                                 <Label>Type</Label>
                                                 <select
@@ -369,28 +571,69 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 </select>
                                             </div>
                                             <div>
-                                                <Label>SurName</Label>
+                                                <Label>Surname *</Label>
                                                 <Input
                                                     value={customer.individualLastName}
                                                     onChange={e => update("individualLastName", e.target.value)}
+                                                    required
+                                                    placeholder="Enter surname"
                                                 />
                                             </div>
 
                                             <div>
-                                                <Label>Other Name</Label>
+                                                <Label>Other Name *</Label>
                                                 <Input
                                                     required
                                                     value={customer.individualFirstName}
                                                     onChange={e => update("individualFirstName", e.target.value)}
+                                                    placeholder="Enter other name"
                                                 />
                                             </div>
 
                                             <div>
-                                                <Label>ID / Passport Number</Label>
-                                                <Input
-                                                    value={customer.individualIdentityCardNumber}
-                                                    onChange={e => update("individualIdentityCardNumber", e.target.value)}
-                                                />
+                                                <Label>ID / Passport Number *</Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        value={customer.individualIdentityCardNumber}
+                                                        onChange={(e) => {
+                                                            update("individualIdentityCardNumber", e.target.value);
+                                                            setErrors(prev => ({ ...prev, individualIdentityCardNumber: "" }));
+                                                            setIdExists(false);
+                                                        }}
+                                                        onBlur={() => {
+                                                            const trimmed = customer.individualIdentityCardNumber?.trim();
+
+                                                            update("individualIdentityCardNumber", trimmed);
+
+                                                            if (trimmed && trimmed.length >= 5) {
+                                                                checkIfIdExists(trimmed);
+                                                            }
+                                                        }}
+                                                        className={
+                                                            errors.individualIdentityCardNumber || idExists
+                                                                ? "border-red-500 focus-visible:ring-red-500"
+                                                                : ""
+                                                        }
+                                                        placeholder="Enter ID/Passport number"
+                                                        required
+                                                    />
+
+                                                    {checkingId && (
+                                                        <div className="absolute right-2 top-2">
+                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {idExists && (
+                                                    <p className="text-sm text-red-500 mt-1">
+                                                        This ID number is already registered
+                                                    </p>
+                                                )}
+                                                {errors.individualIdentityCardNumber && !idExists && (
+                                                    <p className="text-sm text-red-500 mt-1">
+                                                        {errors.individualIdentityCardNumber}
+                                                    </p>
+                                                )}
                                             </div>
 
 
@@ -400,6 +643,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                     type="date"
                                                     value={customer.individualBirthDate}
                                                     onChange={e => update("individualBirthDate", e.target.value)}
+                                                    max={today}
                                                 />
                                             </div>
 
@@ -442,9 +686,9 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.addressLandLine}
                                                     onChange={(e) => update("addressLandLine", e.target.value)}
+                                                    placeholder="0201234567"
                                                 />
                                             </div>
-
 
                                             <div>
                                                 <Label>Email</Label>
@@ -471,6 +715,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                             ? "border-red-500 focus-visible:ring-red-500"
                                                             : ""
                                                     }
+                                                    placeholder="email@example.com"
                                                 />
 
                                                 {errors.addressEmail && (
@@ -488,17 +733,16 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                     className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                                 >
                                                     <option value="">Select Marital Status</option>
-                                                    <option value="2">Married</option>
                                                     <option value="1">Single</option>
+                                                    <option value="2">Married</option>
                                                     <option value="3">Divorced</option>
                                                     <option value="4">Widowed</option>
                                                     <option value="5">Separated</option>
                                                 </select>
                                             </div>
 
-
                                             <div>
-                                                <Label>PIN</Label>
+                                                <Label>KRA PIN (Optional)</Label>
                                                 <Input
                                                     placeholder="A123456789B"
                                                     value={customer.personalIdentificationNumber}
@@ -537,7 +781,6 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 )}
                                             </div>
 
-
                                             <div>
                                                 <Label>Gender</Label>
                                                 <select
@@ -555,6 +798,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.addressCity}
                                                     onChange={e => update("addressCity", e.target.value)}
+                                                    placeholder="Enter city"
                                                 />
                                             </div>
 
@@ -563,6 +807,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.addressPostalCode}
                                                     onChange={e => update("addressPostalCode", e.target.value)}
+                                                    placeholder="00100"
                                                 />
                                             </div>
                                             <div>
@@ -570,19 +815,82 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.addressStreet}
                                                     onChange={(e) => update("addressStreet", e.target.value)}
+                                                    placeholder="Enter place of birth"
                                                 />
                                             </div>
+
+                                            {/* FIXED: Nationality Field with Auto-Population */}
                                             <div>
                                                 <Label>Nationality</Label>
-                                                <select
-                                                    value={customer.individualNationality}
-                                                    onChange={(e) => update("individualNationality", e.target.value)}
-                                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    <option value="">Select Marital Status</option>
-                                                    <option value="Kenya">Kenya</option>
-                                                    <option value="Ukraine">Ukraine</option>
-                                                </select>
+                                                <div className="relative">
+                                                    <Input
+                                                        type="text"
+                                                        value={nationalitySearch}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setNationalitySearch(value);
+                                                            setShowNationalityDropdown(true);
+
+                                                            if (value !== customer.individualNationality) {
+                                                                update("individualNationality", "");
+                                                            }
+                                                        }}
+                                                        onFocus={() => {
+                                                            setShowNationalityDropdown(true);
+                                                            setNationalitySearch(customer.individualNationality || "");
+                                                        }}
+                                                        onBlur={() => {
+                                                            // Delay so click can register
+                                                            setTimeout(() => setShowNationalityDropdown(false), 150);
+                                                        }}
+                                                        placeholder="Search nationality..."
+                                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    />
+
+
+                                                    {/* Dropdown list */}
+                                                    {showNationalityDropdown && nationalitySearch && filteredNationalities.length > 0 && (
+                                                        <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                            {filteredNationalities.map((nationality) => (
+                                                                <div
+                                                                    key={nationality}
+                                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                                    onMouseDown={() => {
+                                                                        update("individualNationality", nationality);
+                                                                        setNationalitySearch(nationality);
+                                                                        setShowNationalityDropdown(false); // 👈 closes dropdown
+                                                                    }}
+                                                                >
+                                                                    {nationality}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+
+                                                    {/* Hidden select for form submission */}
+                                                    <select
+                                                        value={customer.individualNationality}
+                                                        onChange={(e) => {
+                                                            update("individualNationality", e.target.value);
+                                                            setNationalitySearch(e.target.value);
+                                                        }}
+                                                        className="hidden"
+                                                    >
+                                                        <option value="">Select Nationality</option>
+                                                        {filteredNationalities.map((nationality) => (
+                                                            <option key={nationality} value={nationality}>
+                                                                {nationality}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+
+                                                    {customer.individualNationality && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Selected: {customer.individualNationality}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div>
@@ -590,6 +898,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.individualPayrollNumbers}
                                                     onChange={(e) => update("individualPayrollNumbers", e.target.value)}
+                                                    placeholder="Enter payroll number"
                                                 />
                                             </div>
 
@@ -638,6 +947,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.individualEmploymentDesignation}
                                                     onChange={e => update("individualEmploymentDesignation", e.target.value)}
+                                                    placeholder="Enter designation"
                                                 />
                                             </div>
 
@@ -660,42 +970,104 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Label>Registration Date</Label>
                                                 <Input
                                                     type="date"
-                                                    value={customer.createdDate}
-                                                    onChange={e => update("createdDate", e.target.value)}
+                                                    value={customer.registrationDate}
+                                                    onChange={e => update("registrationDate", e.target.value)}
+                                                    max={today}
                                                 />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Cannot select future dates
+                                                </p>
                                             </div>
                                             <div>
                                                 <Label>Bank Account Number</Label>
                                                 <Input
                                                     value={customer.reference1}
                                                     onChange={e => update("reference1", e.target.value)}
+                                                    placeholder="Enter bank account number"
                                                 />
                                             </div>
+
+                                            {/* FIXED: Bank Name Field with Auto-Population */}
                                             <div>
                                                 <Label>Bank Name</Label>
-                                                <select
-                                                    value={customer.bankName}
-                                                    onChange={e => update("bankName", e.target.value)}
-                                                    className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    <option value="">Select Bank</option>
-                                                    <option value="KCB">KCB</option>
-                                                    <option value="EQUITY">EQUITY</option>
-                                                    <option value="Cooperative">Cooperative</option>
-                                                </select>
+                                                <div className="relative">
+                                                    <Input
+                                                        type="text"
+                                                        value={bankSearch}
+                                                        onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            setBankSearch(value);
+                                                            // If user types something different from current selection, clear selection
+                                                            if (value !== customer.bankName) {
+                                                                update("bankName", "");
+                                                            }
+                                                        }}
+                                                        onFocus={() => {
+                                                            if (customer.bankName) {
+                                                                setBankSearch(customer.bankName);
+                                                            } else {
+                                                                setBankSearch("");
+                                                            }
+                                                        }}
+                                                        placeholder="Search bank..."
+                                                        className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    />
+
+                                                    {/* Dropdown list */}
+                                                    {bankSearch && filteredBanks.length > 0 && (
+                                                        <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
+                                                            {filteredBanks.map((bank) => (
+                                                                <div
+                                                                    key={bank}
+                                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                                    onClick={() => {
+                                                                        update("bankName", bank);
+                                                                        setBankSearch(bank);
+                                                                    }}
+                                                                >
+                                                                    {bank}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Hidden select for form submission */}
+                                                    <select
+                                                        value={customer.bankName}
+                                                        onChange={(e) => {
+                                                            update("bankName", e.target.value);
+                                                            setBankSearch(e.target.value);
+                                                        }}
+                                                        className="hidden"
+                                                    >
+                                                        <option value="">Select Bank</option>
+                                                        {filteredBanks.map((bank) => (
+                                                            <option key={bank} value={bank}>
+                                                                {bank}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+
+                                                    {customer.bankName && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Selected: {customer.bankName}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
+
                                             <div>
                                                 <Label>Branch Name</Label>
                                                 <Input
                                                     value={customer.branchName}
                                                     onChange={e => update("branchName", e.target.value)}
+                                                    placeholder="Enter branch name"
                                                 />
                                             </div>
 
                                         </div>
                                     </section>
                                 )}
-
 
                                 {/* STEP 2 – NEXT OF KIN */}
                                 {step === 2 && (
@@ -815,15 +1187,13 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                             </div>
                                         ))}
 
-
                                         <Button variant="outline" className="bg-indigo-600 text-white" onClick={addNextOfKin}>
                                             + Add Next of Kin
                                         </Button>
                                     </section>
                                 )}
 
-
-                                {/* STEP 6 – UPLOADS */}
+                                {/* STEP 3 – UPLOADS */}
                                 {step === 3 && (
                                     <section>
                                         <h3 className="text-lg font-semibold mb-3">Uploads</h3>
@@ -885,6 +1255,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                                 <Input
                                                     value={customer.remarks}
                                                     onChange={(e) => update("remarks", e.target.value)}
+                                                    placeholder="Additional notes..."
                                                 />
                                             </div>
 
@@ -919,7 +1290,7 @@ export default function MemberRegistrationDrawer({ open, onClose, refresh }) {
                                             Next
                                         </Button>
                                     ) : (
-                                        <Button onClick={handleSubmit} disabled={loading}>
+                                        <Button onClick={handleSubmit} disabled={loading || idExists}>
                                             {loading ? "Submitting..." : "Submit"}
                                         </Button>
 

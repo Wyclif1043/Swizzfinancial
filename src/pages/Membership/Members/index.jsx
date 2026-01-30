@@ -35,6 +35,8 @@ import MemberDetailsDrawer from "./MemberDetailDrawer";
 //import AddNextOfKinDrawer from "./AddNextOfKinDrawer";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import MemberEditDrawer from "./MemberEditDrawer";
+
 
 
 export default function Members() {
@@ -56,8 +58,9 @@ export default function Members() {
     const [pagination, setPagination] = useState(null);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 5; // change to 10/20 if you want
-    const totalPages = pagination?.TotalPages || 1;
+    const pageSize = 10; // change to 10/20 if you want
+    const totalPages = (pagination?.TotalPages ?? 0) + 1;
+
 
 
 
@@ -74,7 +77,7 @@ export default function Members() {
         try {
             const res = await fetch(
                 `${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/values/GetMembersWithDetails` +
-                `?pageIndex=${currentPage}` +
+                `?pageIndex=${currentPage - 1}` + // subtract 1 for backend
                 `&pageSize=${pageSize}` +
                 `&includeAccounts=true` +
                 `&includeNextOfKin=true`,
@@ -355,12 +358,12 @@ export default function Members() {
                                                 Edit
                                             </DropdownMenuItem>
 
-                                            <DropdownMenuItem
+                                            {/* <DropdownMenuItem
                                                 className="text-red-600"
                                                 onClick={() => handleDelete(m.Id)}
                                             >
                                                 Delete
-                                            </DropdownMenuItem>
+                                            </DropdownMenuItem> */}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -378,26 +381,25 @@ export default function Members() {
                     <Button
                         variant="outline"
                         size="sm"
-                        disabled={currentPage === 0} // Prev disabled on first page
+                        disabled={currentPage === 1} // first page
                         onClick={() => setCurrentPage(currentPage - 1)}
                     >
                         <FaChevronLeft /> Prev
                     </Button>
 
                     <span className="text-sm text-gray-600">
-                        Page {currentPage + 1} of {totalPages + 1} {/* show 1-based page */}
+                        Page {currentPage} of {totalPages} {/* now matches UI 1-based */}
                     </span>
 
                     <Button
                         variant="outline"
                         size="sm"
-                        disabled={currentPage === totalPages} // Next disabled on last page
-                        onClick={() =>
-                            setCurrentPage(currentPage + 1)
-                        }
+                        disabled={currentPage === totalPages} // last page
+                        onClick={() => setCurrentPage(currentPage + 1)}
                     >
                         Next <FaChevronRight />
                     </Button>
+
                 </div>
             )}
 
@@ -424,7 +426,12 @@ export default function Members() {
                 onClose={() => setOpenNextOfKinDrawer(false)}
                 customerId={selectedCustomerId}
             /> */}
-
+            <MemberEditDrawer
+                open={openEditDrawer}
+                onClose={() => setOpenEditDrawer(false)}
+                refresh={fetchMembers}
+                member={selectedMember}
+            />
 
         </div>
     );

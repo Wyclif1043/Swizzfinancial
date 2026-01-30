@@ -44,6 +44,10 @@ export default function LoanCalculator() {
     const [form, setForm] = useState({});
     const [openScheduleDrawer, setOpenScheduleDrawer] = useState(false);
 
+    const [openCustomerModal, setOpenCustomerModal] = useState(false);
+    const [customerQuery, setCustomerQuery] = useState("");
+
+
     useEffect(() => {
         fetch(`${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/customers`, {
             headers: { "ngrok-skip-browser-warning": "true" },
@@ -276,26 +280,21 @@ export default function LoanCalculator() {
 
 
                     {/* CUSTOMER DETAILS */}
+
+                    {/* CUSTOMER DETAILS */}
                     <div className="bg-white rounded-xl shadow p-6">
-                        <h2 className="text-lg font-semibold mb-4 rounded-lg bg-indigo-700 text-gray-50 p-3">Applicant Details</h2>
+                        <h2 className="text-lg font-semibold mb-4 rounded-lg bg-indigo-700 text-gray-50 p-3">
+                            Applicant Details
+                        </h2>
 
-                        <input
-                            list="customers"
-                            value={searchValue}
-                            onChange={(e) => setSearchValue(e.target.value)}
-                            onBlur={(e) => handleCustomerSelect(e.target.value)}
-                            placeholder="Search customer by name | ID | payroll"
-                            className="w-full p-3 border rounded mb-4"
-                        />
-
-                        <datalist id="customers">
-                            {customers.map((c) => (
-                                <option
-                                    key={c.Id}
-                                    value={`${c.IndividualFirstName} | ${c.IdentificationNumber} | ${c.IndividualPayrollNumbers}`}
-                                />
-                            ))}
-                        </datalist>
+                        <button
+                            onClick={() => setOpenCustomerModal(true)}
+                            className="w-full p-3 border rounded mb-4 text-left bg-gray-50 hover:bg-gray-100"
+                        >
+                            {form.CustomerFullName
+                                ? `${form.CustomerFullName} | ${form.CustomerIndividualIdentityCardNumber} | ${form.CustomerIndividualPayrollNumbers}`
+                                : "Select customer (Name | ID | Payroll)"}
+                        </button>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <input className="p-2 rounded border" readOnly value={form.CustomerFullName || ""} placeholder="Full Name" />
@@ -306,6 +305,7 @@ export default function LoanCalculator() {
                             <input className="p-2 rounded border" readOnly value={form.CustomerAddressEmail || ""} placeholder="Email" />
                         </div>
                     </div>
+
 
                     {/* LOAN DETAILS */}
                     <div className="bg-white rounded-xl shadow p-6">
@@ -321,7 +321,7 @@ export default function LoanCalculator() {
                             />
                             <input
                                 type="number"
-                                className="p-2 rounded"
+                                className="p-2 rounded border"
                                 value={interestRate}
                                 onChange={(e) => setInterestRate(e.target.value)}
                                 placeholder="Annual Interest (%)"
@@ -352,70 +352,6 @@ export default function LoanCalculator() {
                             Calculate Loan
                         </button>
                     </div>
-
-
-                    {/* {schedule.length > 0 && (
-                        <div className="flex justify-end">
-                            <Button
-                                onClick={() => setOpenScheduleDrawer(true)}
-                                className="bg-indigo-700 hover:bg-indigo-800 text-white px-6 py-3 rounded-lg font-semibold"
-                            >
-                                View Repayment Schedule
-                            </Button>
-                        </div>
-                    )} */}
-
-
-                    {/* SUMMARY */}
-                    {/* {schedule.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <SummaryCard title="Periodic Payment" value={schedule[0].payment} />
-                            <SummaryCard title="Total Interest" value={totalInterest} />
-                            <SummaryCard title="Total Payable" value={totalPayable} />
-                        </div>
-                    )} */}
-
-                    {/* FULL REPAYMENT PLAN */}
-                    {/* {schedule.length > 0 && (
-                        <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-lg font-semibold">Full Repayment Schedule</h2>
-                                <button
-                                    onClick={downloadSchedule}
-                                    className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-lg font-semibold"
-                                >
-                                    Download Schedule
-                                </button>
-                            </div>
-
-                            <table className="min-w-full text-sm border">
-                                <thead className="bg-slate-800 text-white">
-                                    <tr>
-                                        <th className="p-2">#</th>
-                                        <th className="p-2">Date</th>
-                                        <th className="p-2">Beginning</th>
-                                        <th className="p-2">Payment</th>
-                                        <th className="p-2">Principal</th>
-                                        <th className="p-2">Interest</th>
-                                        <th className="p-2">Ending</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {schedule.map((row, i) => (
-                                        <tr key={i} className={i % 2 ? "bg-slate-50" : ""}>
-                                            <td className="p-2 text-center">{row.paymentNumber}</td>
-                                            <td className="p-2">{row.date}</td>
-                                            <td className="p-2 text-right">{row.beginningBalance}</td>
-                                            <td className="p-2 text-right">{row.payment}</td>
-                                            <td className="p-2 text-right">{row.principal}</td>
-                                            <td className="p-2 text-right">{row.interest}</td>
-                                            <td className="p-2 text-right">{row.endingBalance}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )} */}
                 </div>
             </div>
 
@@ -535,6 +471,98 @@ export default function LoanCalculator() {
                     </>
                 )}
             </AnimatePresence>
+
+
+
+
+
+
+
+
+
+
+
+
+
+            {/**select modal */}
+
+            <AnimatePresence>
+                {openCustomerModal && (
+                    <>
+                        {/* Overlay */}
+                        <motion.div
+                            className="fixed inset-0 bg-black z-40"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.4 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setOpenCustomerModal(false)}
+                        />
+
+                        {/* Modal */}
+                        <motion.div
+                            className="fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-lg
+                   -translate-x-1/2 -translate-y-1/2
+                   bg-white rounded-2xl shadow-xl overflow-hidden p-3"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                        >
+                            {/* Header */}
+                            <div className="bg-indigo-700 text-white p-4 flex justify-between items-center rounded-2xl">
+                                <h3 className="font-semibold">Select Customer</h3>
+                                <button onClick={() => setOpenCustomerModal(false)}>✕</button>
+                            </div>
+
+                            {/* Search */}
+                            <div className="p-4 border-b">
+                                <input
+                                    className="w-full p-2 border rounded"
+                                    placeholder="Search by name, ID, payroll..."
+                                    value={customerQuery}
+                                    onChange={(e) => setCustomerQuery(e.target.value)}
+                                />
+                            </div>
+
+                            {/* List */}
+                            <div className="max-h-[300px] overflow-y-auto divide-y">
+                                {customers
+                                    .filter(c =>
+                                        `${c.IndividualFirstName} ${c.IndividualLastName} ${c.IdentificationNumber} ${c.IndividualPayrollNumbers}`
+                                            .toLowerCase()
+                                            .includes(customerQuery.toLowerCase())
+                                    )
+                                    .map(c => (
+                                        <button
+                                            key={c.Id}
+                                            onClick={() => {
+                                                setForm({
+                                                    CustomerId: c.Id,
+                                                    CustomerFullName: `${c.IndividualFirstName} ${c.IndividualLastName}`,
+                                                    CustomerIndividualIdentityCardNumber: c.IndividualIdentityCardNumber || "",
+                                                    CustomerIndividualPayrollNumbers: c.IndividualPayrollNumbers || "",
+                                                    CustomerPersonalIdentificationNumber: c.PersonalIdentificationNumber || "",
+                                                    CustomerAddressMobileLine: c.AddressMobileLine || "",
+                                                    CustomerAddressEmail: c.AddressEmail || "",
+                                                });
+                                                setOpenCustomerModal(false);
+                                                setCustomerQuery("");
+                                            }}
+                                            className="w-full text-left p-3 hover:bg-indigo-50"
+                                        >
+                                            <div className="font-medium">
+                                                {c.IndividualFirstName} {c.IndividualLastName}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {/* ID: {c.IdentificationNumber}*/} Payroll: {c.IndividualPayrollNumbers}
+                                            </div>
+                                        </button>
+                                    ))}
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
 
         </div>
     );

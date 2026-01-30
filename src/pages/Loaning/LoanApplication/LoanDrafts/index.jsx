@@ -10,11 +10,13 @@ import {
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
 import LoanAppraisalDrawer from "./LoanAppraisalDrawer";
+import LoanDetailsDrawer from "./LoanDetailsDrawer";
+import LoanGuarantorsDrawer from "./LoanGuarantorsDrawer";
 
 export default function LoanDrafts() {
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [expandedRow, setExpandedRow] = useState(null);
+    //const [expandedRow, setExpandedRow] = useState(null);
     const [submitting, setSubmitting] = useState(null);
     const [refresh, setRefresh] = useState(true);
     const [pageIndex, setPageIndex] = useState(0);
@@ -28,6 +30,12 @@ export default function LoanDrafts() {
     const [selectedLoan, setSelectedLoan] = useState(null);
 
     const [searchTerm, setSearchTerm] = useState("");
+
+    const [detailsOpen, setDetailsOpen] = useState(false);
+
+    const [showGuarantors, setShowGuarantors] = useState(false);
+    const [selectedLoanCaseId, setSelectedLoanCaseId] = useState(null);
+
 
 
 
@@ -74,6 +82,8 @@ export default function LoanDrafts() {
     });
 
 
+    console.log(loans);
+
     return (
         <div className="bg-white py-8 rounded-lg">
             <div className="flex justify-between items-center mb-4">
@@ -96,12 +106,12 @@ export default function LoanDrafts() {
             </div>
 
             <div className="bg-gray-200 p-4 rounded-sm">
-                <div className="grid grid-cols-10 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+                <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
                     <span className="col-span-1">Loan No.</span>
                     <span className="col-span-2">Customer</span>
                     <span className="col-span-2">Branch</span>
                     <span className="col-span-2">Status</span>
-                    <span className="col-span-1">Amount</span>
+                    <span className="col-span-2">Amount</span>
                     <span className="col-span-2 text-right">Actions</span>
                 </div>
 
@@ -125,7 +135,7 @@ export default function LoanDrafts() {
                                 key={loan.Id}
                                 className="bg-white rounded-lg shadow-lg border"
                             >
-                                <div className="grid grid-cols-10 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                                <div className="grid grid-cols-12 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                                     <span className="font-medium text-indigo-700 col-span-1">
                                         {loan.CaseNumber.toString().padStart(7, "0")}
                                     </span>
@@ -138,13 +148,15 @@ export default function LoanDrafts() {
                                     <span className="text-sm w-28 rounded-2xl col-span-2 text-center flex items-center justify-center p-1 bg-gray-500 text-white">
                                         {loan.StatusDescription}
                                     </span>
-                                    <span className="font-semibold col-span-1">
+                                    <span className="font-semibold col-span-2">
                                         Ksh {loan.AmountApplied}
                                     </span>
 
 
 
-                                    <div className="flex gap-2 col-span-2 justify-end">
+                                    <div className="flex gap-2 col-span-3 justify-end">
+
+
 
                                         <Button
                                             size="sm"
@@ -157,41 +169,37 @@ export default function LoanDrafts() {
                                             Appraise
                                         </Button>
 
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-green-700 text-white hover:bg-green-700"
+                                            onClick={() => {
+                                                setSelectedLoanCaseId(loan.Id);
+                                                setSelectedLoan(loan);
+                                                setShowGuarantors(true);
+                                            }}
+                                        >
+                                            View Guarantors
+                                        </Button>
 
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             className="bg-gray-700 text-white hover:bg-gray-600"
-                                            onClick={() =>
-                                                setExpandedRow(expandedRow === loan.Id ? null : loan.Id)
-                                            }
+                                            onClick={() => {
+                                                setSelectedLoan(loan);   // 👈 expose full object
+                                                setDetailsOpen(true);    // 👈 open drawer
+                                            }}
+
                                         >
-                                            {expandedRow === loan.Id ? "Hide Details" : "View Details"}
+                                            View Details
                                         </Button>
 
 
                                     </div>
 
                                 </div>
-                                {expandedRow === loan.Id && (
-                                    <div className="border-t bg-gray-300 p-4 mx-1 mb-1 rounded-b-lg space-y-4">
-                                        <div className="bg-white p-4 rounded-lg shadow border">
-                                            <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl mb-2 flex items-center gap-2">
-                                                Loan Details
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-xl text-sm text-gray-700">
-                                                {/* <div>Loan Purpose: {loan.LoanPurposeDescription}</div> */}
-                                                <div>Loan Product: {loan.LoanProductDescription}</div>
-                                                {/* <div>Customer ID: {loan.CustomerId}</div> */}
-                                                <div>Customer Email: {loan.CustomerAddressEmail}</div>
-                                                <div>Phone: {loan.CustomerAddressMobileLine}</div>
-                                                <div>Amount Applied: Ksh {loan.AmountApplied}</div>
-                                                <div>Received Date: {new Date(loan.ReceivedDate).toLocaleDateString()}</div>
-                                                <div>Status: {loan.StatusDescription}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+
                             </div>
                         ))}
                     </div>
@@ -230,6 +238,18 @@ export default function LoanDrafts() {
                 loanCaseId={selectedLoan?.Id}
                 onClose={() => setAppraisalOpen(false)}
                 onSuccess={() => setRefresh(!refresh)}
+            />
+            <LoanDetailsDrawer
+                open={detailsOpen}
+                loan={selectedLoan}
+                onClose={() => setDetailsOpen(false)}
+            />
+
+            <LoanGuarantorsDrawer
+                open={showGuarantors}
+                loanCaseId={selectedLoanCaseId}
+                loan={selectedLoan}
+                onClose={() => setShowGuarantors(false)}
             />
 
 

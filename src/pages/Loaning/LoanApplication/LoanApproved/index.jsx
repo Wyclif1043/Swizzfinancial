@@ -11,6 +11,8 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import NotFoundImage from "/assets/scopefinding.png";
+import LoanDetailsDrawer from "./LoanDetailsDrawer";
+import LoanGuarantorsDrawer from "./LoanGuarantorsDrawer";
 
 export default function LoanApproved() {
     const [loans, setLoans] = useState([]);
@@ -23,6 +25,34 @@ export default function LoanApproved() {
     const pageSize = 10;
 
     const [searchTerm, setSearchTerm] = useState("");
+    const [bankAccounts, setBankAccounts] = useState([]);
+
+    const [detailsOpen, setDetailsOpen] = useState(false);
+    const [selectedLoan, setSelectedLoan] = useState(null);
+
+    const [showGuarantors, setShowGuarantors] = useState(false);
+    const [selectedLoanCaseId, setSelectedLoanCaseId] = useState(null);
+
+
+
+
+    useEffect(() => {
+        const fetchBanks = async () => {
+            try {
+                const res = await fetch(
+                    "http://88.99.215.90:8600/api/values/getBankWithLinkages",
+                    { headers: { "ngrok-skip-browser-warning": "true" } }
+                );
+                const data = await res.json();
+                if (data.Success) setBankAccounts(data.Data);
+            } catch (err) {
+                console.error("Failed to load banks", err);
+            }
+        };
+
+        fetchBanks();
+    }, []);
+
 
 
     const fetchLoanDrafts = () => {
@@ -43,43 +73,67 @@ export default function LoanApproved() {
         fetchLoanDrafts();
     }, [refresh, pageIndex]);
 
-    const handleSubmitForAppraisal = async (id) => {
-        // Open SweetAlert modal for option selection
-        // const { value: selectedOption } = await Swal.fire({
-        //     title: 'Select Audit Option',
-        //     input: 'radio',
-        //     inputOptions: {
-        //         1: 'Verify',
-        //         2: 'Reject',
-        //         4: 'Defer',
-        //     },
-        //     inputValidator: (value) => {
-        //         if (!value) return 'You need to choose an option!';
-        //     },
-        //     showCancelButton: true,
-        //     confirmButtonText: 'Submit',
-        //     cancelButtonText: 'Cancel',
-        //     confirmButtonColor: '#4f46e5',
-        //     cancelButtonColor: '#6b7280',
-        // });
 
-        //if (!selectedOption) return; // user cancelled
 
-        setSubmitting(id);
+    const handleSubmitForAppraisal = async (loanCaseId) => {
+
+        let selectedBankId = null;
+        let disbursementDate = null;
+
+        // STEP 1: Select Bank Account
+        const bankOptions = bankAccounts.reduce((acc, bank) => {
+            acc[bank.Id] = `${bank.BankName} - ${bank.BankAccountNumber}`;
+            return acc;
+        }, {});
+
+        const { value: bankId } = await Swal.fire({
+            title: "Select Bank Account",
+            input: "select",
+            inputOptions: bankOptions,
+            inputPlaceholder: "Choose bank account",
+            inputValidator: v => !v && "Bank account is required",
+            showCancelButton: true,
+        });
+
+        if (!bankId) return;
+        selectedBankId = bankId;
+
+        // STEP 2: Select Disbursement Date
+        const { value: date } = await Swal.fire({
+            title: "Select Disbursement Date",
+            input: "date",
+            inputValue: new Date().toISOString().split("T")[0],
+            inputValidator: v => !v && "Disbursement date is required",
+            showCancelButton: true,
+            confirmButtonText: "Continue",
+        });
+
+        if (!date) return;
+
+        // Convert to ISO (keep backend happy)
+        disbursementDate = new Date(date).toISOString();
+
+        setSubmitting(loanCaseId);
+
+        // STEP 3: Build payload
         const payload = {
             caseNumber: 0,
-            loanCaseID: id,
-            DisbursedBy: "system"
+            loanCaseID: loanCaseId,
+            action: 1, // Disburse
+            disbursedBy: "system",
+            disbursmentDate: disbursementDate,
+            bankAccountId: selectedBankId,
         };
 
+        console.log("Disbursement Payload:", payload);
         try {
             const res = await fetch(
                 `${import.meta.env.VITE_APP_LOANING_URL}/api/LoanDisbursement`,
                 {
-                    method: 'POST',
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true',
+                        "Content-Type": "application/json",
+                        "ngrok-skip-browser-warning": "true",
                     },
                     body: JSON.stringify(payload),
                 }
@@ -88,21 +142,28 @@ export default function LoanApproved() {
             const message = await res.json();
 
             console.log(message);
-
-            if (res.ok) {
-                if (message.Success) {
-                    Swal.fire('Success!', message.Message, 'success');
-                    setRefresh(!refresh);
-                }
+            if (res.ok || message.Success) {
+                Swal.fire("Success!", message.Message || "Loan disbursed successfully.", "success");
+                setRefresh(prev => !prev);
             } else {
-                Swal.fire('Error!', message.Message, 'error');
+                Swal.fire("Error!", message.Message || "Failed", "error");
             }
         } catch (err) {
-            Swal.fire('Error!', 'Something went wrong.', 'error');
+            Swal.fire("Error!", "Something went wrong.", "error");
         } finally {
             setSubmitting(null);
         }
     };
+
+
+
+
+
+
+
+
+
+
 
 
     const handleOptionChange = (loanId, value) => {
@@ -123,6 +184,8 @@ export default function LoanApproved() {
         );
     });
 
+
+    console.log(loans);
 
     return (
         <div className="bg-white py-8 rounded-lg">
@@ -146,12 +209,12 @@ export default function LoanApproved() {
             </div>
 
             <div className="bg-gray-200 p-4 rounded-sm">
-                <div className="grid grid-cols-10 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
+                <div className="grid grid-cols-12 gap-4 bg-gray-700 text-gray-100 font-semibold p-3 rounded-lg mb-4">
                     <span className="col-span-1">Loan No.</span>
                     <span className="col-span-2">Customer</span>
                     <span className="col-span-2">Branch</span>
                     <span className="col-span-2">Status</span>
-                    <span className="col-span-1">Amount</span>
+                    <span className="col-span-2">Amount</span>
                     <span className="col-span-2 text-right">Actions</span>
                 </div>
 
@@ -175,7 +238,7 @@ export default function LoanApproved() {
                                 key={loan.Id}
                                 className="bg-white rounded-lg shadow-lg border"
                             >
-                                <div className="grid grid-cols-10 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
+                                <div className="grid grid-cols-12 gap-2 items-center py-4 px-6 hover:shadow-xl transition-all">
                                     <span className="font-medium text-indigo-700 col-span-1">
                                         {loan.CaseNumber.toString().padStart(7, "0")}
                                     </span>
@@ -188,7 +251,7 @@ export default function LoanApproved() {
                                     <span className="text-sm w-28 rounded-2xl col-span-2 text-center flex items-center justify-center p-1 bg-gray-500 text-white">
                                         {loan.StatusDescription}
                                     </span>
-                                    <span className="font-semibold col-span-1">
+                                    <span className="font-semibold col-span-3">
                                         Ksh {loan.AmountApplied}
                                     </span>
 
@@ -204,40 +267,34 @@ export default function LoanApproved() {
                                         >
                                             {submitting === loan.Id ? "Submitting..." : "Disburse"}
                                         </Button>
+
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="bg-green-700 text-white hover:bg-green-700"
+                                            onClick={() => {
+                                                setSelectedLoanCaseId(loan.Id);
+                                                setShowGuarantors(true);
+                                            }}
+                                        >
+                                            View Guarantors
+                                        </Button>
+
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             className="bg-gray-700 text-white hover:bg-gray-600"
-                                            onClick={() =>
-                                                setExpandedRow(expandedRow === loan.Id ? null : loan.Id)
-                                            }
+                                            onClick={() => {
+                                                setSelectedLoan(loan);
+                                                setDetailsOpen(true);
+                                            }}
                                         >
-                                            {expandedRow === loan.Id ? "Hide Details" : "View Details"}
+                                            View Details
                                         </Button>
-
-
                                     </div>
 
                                 </div>
-                                {expandedRow === loan.Id && (
-                                    <div className="border-t bg-gray-300 p-4 mx-1 mb-1 rounded-b-lg space-y-4">
-                                        <div className="bg-white p-4 rounded-lg shadow border">
-                                            <h3 className="font-semibold text-white bg-indigo-700 p-3 rounded-xl mb-2 flex items-center gap-2">
-                                                Loan Details
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-xl text-sm text-gray-700">
-                                                {/* <div>Loan Purpose: {loan.LoanPurposeDescription}</div> */}
-                                                <div>Loan Product: {loan.LoanProductDescription}</div>
-                                                {/* <div>Customer ID: {loan.CustomerId}</div> */}
-                                                <div>Customer Email: {loan.CustomerAddressEmail}</div>
-                                                <div>Phone: {loan.CustomerAddressMobileLine}</div>
-                                                <div>Amount Applied: Ksh {loan.AmountApplied}</div>
-                                                <div>Received Date: {new Date(loan.ReceivedDate).toLocaleDateString()}</div>
-                                                <div>Status: {loan.StatusDescription}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+
                             </div>
                         ))}
                     </div>
@@ -270,6 +327,16 @@ export default function LoanApproved() {
                     Next
                 </Button>
             </div>
+            <LoanDetailsDrawer
+                open={detailsOpen}
+                loan={selectedLoan}
+                onClose={() => setDetailsOpen(false)}
+            />
+            <LoanGuarantorsDrawer
+                open={showGuarantors}
+                loanCaseId={selectedLoanCaseId}
+                onClose={() => setShowGuarantors(false)}
+            />
         </div>
     );
 }

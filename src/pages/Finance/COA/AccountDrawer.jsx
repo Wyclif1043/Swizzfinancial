@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,34 +19,55 @@ import NotFoundImage from "/assets/scopefinding.png";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
 export default function AccountDrawer({ account, open, onClose }) {
   const [transactions, setTransactions] = useState([]);
-
-
-  console.log(account);
+  const [pageIndex, setPageIndex] = useState(1); // API uses 1-based indexing
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [search, setSearch] = useState("");
+  const [loadingTx, setLoadingTx] = useState(false);
 
   // Fetch transactions based on selected account
   useEffect(() => {
     if (!account?.Id) return;
 
-    console.log(account.Id)
+    setLoadingTx(true);
 
-    fetch(
-      `${import.meta.env.VITE_APP_FIN_URL}/api/values/GeneralLedgerTransactions?chartOfAccountId=${account.Id}`,
-      { headers: { "ngrok-skip-browser-warning": "true" } }
-    )
+    // Construct URL without line breaks
+    const apiUrl = `http://88.99.215.90:8600/api/values/GeneralLedgerTransactions?chartOfAccountId=${account.Id}&pageIndex=${pageIndex}&pageSize=${pageSize}`;
+
+    fetch(apiUrl, { 
+      headers: { 
+        "ngrok-skip-browser-warning": "true",
+        "Content-Type": "application/json"
+      } 
+    })
       .then((res) => res.json())
       .then((data) => {
-        if (data.PageCollection) setTransactions(data.PageCollection);
+        setTransactions(data.PageCollection || []);
+        setTotalCount(data.TotalCount || 0);
       })
-      .catch((err) => console.error(err));
-  }, [account]);
+      .catch(console.error)
+      .finally(() => setLoadingTx(false));
+  }, [account, pageIndex, pageSize]);
+
+  const filteredTransactions =
+    search.trim() === ""
+      ? transactions
+      : transactions.filter((tx) =>
+        tx.JournalPrimaryDescription
+          ?.toLowerCase()
+          .includes(search.toLowerCase())
+      );
 
   // Calculate totals
-  const totalDebit = transactions.reduce((sum, t) => sum + t.Debit, 0);
-  const totalCredit = transactions.reduce((sum, t) => sum + t.Credit, 0);
+  const totalDebit = filteredTransactions.reduce((s, t) => s + (t.Debit || 0), 0);
+  const totalCredit = filteredTransactions.reduce((s, t) => s + (t.Credit || 0), 0);
 
+  // Reset to first page when search or pageSize changes
+  useEffect(() => {
+    setPageIndex(1);
+  }, [search, pageSize]);
 
   const handlePrintPDF = () => {
     if (!account) return;
@@ -117,12 +136,12 @@ export default function AccountDrawer({ account, open, onClose }) {
 
     // ===== Transactions Table =====
     const tableData = transactions.map((tx) => [
-      new Date(tx.JournalValueDate).toLocaleDateString(),
-      tx.JournalPrimaryDescription,
-      tx.Debit.toLocaleString(),
-      tx.Credit.toLocaleString(),
-      tx.RunningBalance.toLocaleString(),
-      tx.ContraGLAccountDescription,
+      tx.JournalValueDate ? new Date(tx.JournalValueDate).toLocaleDateString() : '',
+      tx.JournalPrimaryDescription || '',
+      (tx.Debit || 0).toLocaleString(),
+      (tx.Credit || 0).toLocaleString(),
+      (tx.RunningBalance || 0).toLocaleString(),
+      tx.ContraGLAccountDescription || '',
     ]);
 
     autoTable(doc, {
@@ -162,6 +181,10 @@ export default function AccountDrawer({ account, open, onClose }) {
     doc.save(`Account_Statement_${account.Code}.pdf`);
   };
 
+  // Calculate pagination info
+  const startItem = (pageIndex - 1) * pageSize + 1;
+  const endItem = Math.min(pageIndex * pageSize, totalCount);
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <AnimatePresence>
@@ -179,162 +202,202 @@ export default function AccountDrawer({ account, open, onClose }) {
 
           {/* Drawer */}
           <motion.div
-            className="fixed top-5 right-5 rounded-xl w-180 bg-white shadow-xl z-50 flex flex-col"
+            className="fixed top-0 right-0 max-h-full w-[800px] bg-white shadow-2xl z-50 flex flex-col m-2 rounded-2xl"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
           >
             {/* Header */}
-            <div className="p-4 flex justify-between items-center border-b">
-              <h2 className="font-bold text-lg">
-                {account?.Description || "Account Details"}
-              </h2>
-              <Button variant="outline" size="sm" onClick={onClose}>
+            <div className="px-3 py-3 border-b flex justify-between items-center bg-indigo-500 rounded-2xl m-2">
+              <div className="flex justify-center items-center gap-4 bg-indigo-800 p-4 rounded-2xl px-6">
+                <h2 className="text-2xl font-semibold text-gray-50">
+                  {account.Description}
+                </h2>
+
+                <div className="mt-2 flex gap-2">
+                  <span className="text-xs px-2 py-1 rounded bg-indigo-50 text-indigo-700">
+                    {account.TypeDescription}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded border text-gray-50">
+                    Code  {(() => {
+                      const codeStr = String(account.Code);
+                      const part1 = codeStr.slice(0, 1);
+                      const part2 = codeStr.slice(1, 3);
+                      const part3 = codeStr.slice(3).padStart(5, "0");
+                      return `${part1}-${part2}-${part3}`;
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              <Button variant="ghost" size="sm" onClick={onClose} className="bg-gray-50 text-gray-600 mx-3">
                 Close
               </Button>
             </div>
 
-            {/* Content */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1">
-              {/* 🔹 Compact Account Overview Card */}
-              {account && (
-                <Card className="rounded-2xl shadow-lg bg-indigo-600 text-white p-4 space-y-6">
-                  {/* Card & Balance Section */}
-                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    {/* Fake Card Preview */}
-                    <div className="bg-gradient-to-r from-gray-600 to-gray-800 rounded-2xl p-6 w-100 text-white shadow-inner ">
-                      <div className="mb-6 flex justify-between">
-                        <div className="w-12 h-8 bg-indigo-400 px-2 rounded-md flex items-center justify-center">
-                        </div>
-                        <div>Code {account.Code || "XXXX"}</div>
-                      </div>
-                      <div className="mb-4">
-                        <p className="text-gray-400 text-sm">Balance amount</p>
-                        <p className="text-3xl font-bold">
-                          {account.Balance.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "Ksh",
-                          })}
-                        </p>
-                      </div>
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4">
+              {/* Balance Summary */}
+              <div className="grid grid-cols-3 gap-4 bg-gray-200 p-3 rounded-2xl">
+                <SummaryCard
+                  label="Balance"
+                  value={Math.abs(account.Balance || 0).toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "KES",
+                  })}
+                  highlight
+                />
+                <SummaryCard
+                  label="Total Debit"
+                  value={totalDebit.toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "KES",
+                  })}
+                />
+                <SummaryCard
+                  label="Total Credit"
+                  value={totalCredit.toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "KES",
+                  })}
+                />
+              </div>
 
-                      <div className="flex justify-between text-sm">
-                        <div>
-                          <p className="text-gray-400">Debit</p>
-                          <p className="font-semibold">
-                            {totalDebit.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "Ksh",
-                            })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-gray-400">Credit</p>
-                          <p className="font-semibold">
-                            {totalCredit.toLocaleString("en-US", {
-                              style: "currency",
-                              currency: "Ksh",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+              {/* Transactions */}
+              <div>
+                <div className="">
 
+                  <div className="flex justify-between items-center mb-3 gap-3 bg-gray-200 rounded-xl px-3 py-3">
+                    <h3 className="text-sm font-semibold text-gray-800 ml-1">
+                      Transactions
+                    </h3>
 
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search description..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="px-3 py-1.5 text-sm border rounded-md w-56 bg-gray-50"
+                      />
 
+                      <select
+                        value={pageSize}
+                        onChange={(e) => {
+                          setPageSize(Number(e.target.value));
+                          setPageIndex(1);
+                        }}
 
-
-
-                    {/* Available Amount */}
-                    <div className="flex-1 space-y-6">
-                      <div>
-                        <p className="text-gray-100 text-sm">Description</p>
-                        <p className="text-3xl font-bold">
-                          {account.Description}
-                        </p>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <div>
-                          <p className="text-gray-100">Category</p>
-                          <p className="font-semibold">
-                            {account.CategoryDescription}
-                          </p>
-                        </div>
-                      </div>
+                        className="border rounded-md px-2 py-1 text-sm bg-gray-50"
+                      >
+                        {[5, 10, 20, 50, 100].map((s) => (
+                          <option key={s} value={s}>
+                            {s} rows
+                          </option>
+                        ))}
+                      </select>
 
                     </div>
                   </div>
-                </Card>
-              )}
 
-
-              {/* Transactions Table */}
-              <div className="mt-4 max-h-[300px] overflow-y-auto">
-                <div className="flex justify-between m-2">
-                  <h3 className="font-semibold mb-2">Transactions</h3>
-                  <Button variant="outline" size="sm" onClick={handlePrintPDF} className="bg-indigo-600 text-white hover:text-white hover:bg-indigo-400">
-                    Print PDF
-                  </Button>
                 </div>
-                <Table className="text-center bg-indigo-700">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-center text-gray-50">Date</TableHead>
-                      <TableHead className="text-center text-gray-50">Description</TableHead>
-                      <TableHead className="text-center text-gray-50">Debit</TableHead>
-                      <TableHead className="text-center text-gray-50">Credit</TableHead>
-                      <TableHead className="text-center text-gray-50">Balance</TableHead>
-                      <TableHead className="text-center text-gray-50">Bal Account</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.length > 0 ? (
-                      transactions.map((tx, i) => (
-                        <TableRow
-                          key={tx.Id}
-                          className={i % 2 === 0 ? "bg-indigo-100" : "bg-white"}
-                        >
-                          <TableCell>
-                            {new Date(
-                              tx.JournalValueDate
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {tx.JournalPrimaryDescription}
-                          </TableCell>
-                          <TableCell>{tx.Debit.toLocaleString()}</TableCell>
-                          <TableCell>{tx.Credit.toLocaleString()}</TableCell>
-                          <TableCell>
-                            {tx.RunningBalance.toLocaleString()}
-                          </TableCell>
 
-                          <TableCell>
-                            {tx.ContraGLAccountDescription}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table className="text-sm">
+                    <TableHeader className="bg-gray-800 text-gray-50 hover:bg-gray-800">
+                      <TableRow className="bg-gray-600 text-gray-50 hover:bg-gray-600">
+                        <TableHead className="text-gray-50 hover:text-gray-50">Date</TableHead>
+                        <TableHead className="text-gray-50 hover:text-gray-50">Description</TableHead>
+                        <TableHead className="text-right text-gray-50 hover:text-gray-50">Debit</TableHead>
+                        <TableHead className="text-right text-gray-50 hover:text-gray-50">Credit</TableHead>
+                        <TableHead className="text-right text-gray-50 hover:text-gray-50">Balance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      {loadingTx ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                            Loading transactions...
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-2 text-gray-500 bg-gray-200 w-full"
-                        >
-                          <div className="text-gray-500 text-center mt-4">
-                            <img
-                              src={NotFoundImage}
-                              alt="Not Found"
-                              className="mx-auto w-42 h-auto"
-                            />
-                            <p className="font-medium text-gray-400"> No transactions found. </p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : filteredTransactions.length > 0 ? (
+                        filteredTransactions.map((tx) => (
+                          <TableRow key={tx.Id} className="hover:bg-gray-50">
+                            <TableCell>
+                              {tx.JournalValueDate ? new Date(tx.JournalValueDate).toLocaleDateString() : ''}
+                            </TableCell>
+                            <TableCell className="max-w-[220px] truncate">
+                              {tx.JournalPrimaryDescription}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(tx.Debit || 0).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(tx.Credit || 0).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {Math.abs(tx.RunningBalance || 0).toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10">
+                            <img src={NotFoundImage} className="mx-auto w-28 mb-3" />
+                            <p className="text-sm text-gray-500">No transactions found</p>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+
+                  </Table>
+                </div>
               </div>
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="flex justify-between items-center mt-4 text-sm text-gray-600 border-t px-6 py-4 gap-3">
+              <span>
+                {totalCount === 0
+                  ? "No records"
+                  : `Showing ${startItem} – ${endItem} of ${totalCount} (Page ${pageIndex} of ${totalPages})`}
+              </span>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gray-800 text-gray-50 hover:bg-gray-700"
+                  disabled={pageIndex <= 1}
+                  onClick={() => setPageIndex((p) => Math.max(p - 1, 1))}
+                >
+                  Previous
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-gray-800 text-gray-50 hover:bg-gray-700"
+                  disabled={pageIndex >= totalPages}
+                  onClick={() => setPageIndex((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 flex justify-end gap-3">
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-gray-50"
+                size="sm"
+                variant="outline"
+                onClick={handlePrintPDF}
+              >
+                Export PDF
+              </Button>
             </div>
           </motion.div>
         </>
@@ -343,7 +406,18 @@ export default function AccountDrawer({ account, open, onClose }) {
   );
 }
 
-
-
-
-
+function SummaryCard({ label, value, highlight }) {
+  return (
+    <div
+      className={`rounded-lg border p-4 ${highlight ? "bg-indigo-600 border-indigo-500" : "bg-white"
+        }`}
+    >
+      <p className={`text-xs  uppercase tracking-wide ${highlight ? "text-gray-50" : "text-gray-500"}`}>
+        {label}
+      </p>
+      <p className={`mt-1 text-lg font-semibold  ${highlight ? "text-gray-50" : "text-gray-900"}`}>
+        {value}
+      </p>
+    </div>
+  );
+}

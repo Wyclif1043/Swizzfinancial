@@ -100,136 +100,13 @@ function MemberStatement({ customer }) {
     };
 
 
-    // /* ================= PDF DOWNLOAD ================= */
-    // const downloadPDF = () => {
-    //     const doc = new jsPDF("p", "mm", "a4");
-    //     let y = 15;
-
-    //     /* ================= TITLE ================= */
-    //     doc.setFontSize(16);
-    //     doc.setFont("helvetica", "bold");
-    //     doc.text("ACCOUNT STATEMENT", 105, y, { align: "center" });
-    //     y += 8;
-
-    //     doc.setFontSize(10);
-    //     doc.setFont("helvetica", "normal");
-    //     doc.text(`Period: ${startDate} to ${endDate}`, 105, y, { align: "center" });
-    //     y += 10;
-
-    //     /* ================= MEMBER DETAILS ================= */
-    //     doc.setFontSize(13);
-    //     doc.setFont("helvetica", "bold");
-    //     doc.text("Member Details", 14, y);
-    //     y += 6;
-
-    //     doc.setFontSize(10);
-    //     doc.setFont("helvetica", "normal");
-
-    //     const memberDetails = [
-    //         ["Full Name", `${customer.IndividualFirstName} ${customer.IndividualLastName}`],
-    //         ["Member No", customerInfo.Reference2],
-    //         ["Account No", customerInfo.Reference1],
-    //         ["ID Number", customerInfo.IndividualIdentityCardNumber],
-    //         ["Phone", customerInfo.AddressMobileLine || "N/A"],
-    //     ];
-
-    //     autoTable(doc, {
-    //         startY: y,
-    //         body: memberDetails,
-    //         theme: "grid",
-    //         styles: { fontSize: 9 },
-    //         columnStyles: {
-    //             0: { fontStyle: "bold", cellWidth: 40 },
-    //             1: { cellWidth: 120 },
-    //         },
-    //     });
-
-    //     y = doc.lastAutoTable.finalY + 10;
-
-    //     /* ================= STATEMENT TABLE ================= */
-    //     doc.setFontSize(13);
-    //     doc.setFont("helvetica", "bold");
-    //     doc.text("Transaction Statement", 14, y);
-    //     y += 4;
-
-    //     autoTable(doc, {
-    //         startY: y,
-    //         head: [["Date", "Product", "Description", "Ref", "Debit", "Credit", "Balance"]],
-    //         body: filteredStatement.map((row) => [
-    //             new Date(row.TransactionDate).toLocaleDateString(),
-    //             row.Product,
-    //             row.Description,
-    //             row.Reference,
-    //             row.Debit ? row.Debit.toLocaleString() : "-",
-    //             row.Credit ? row.Credit.toLocaleString() : "-",
-    //             row.RunningTotal.toLocaleString(),
-    //         ]),
-    //         theme: "striped",
-    //         styles: { fontSize: 8 },
-    //         headStyles: {
-    //             fillColor: [55, 65, 81], // gray-700
-    //             textColor: 255,
-    //         },
-    //         columnStyles: {
-    //             4: { halign: "right" },
-    //             5: { halign: "right" },
-    //             6: { halign: "right" },
-    //         },
-    //         margin: { left: 14, right: 14 },
-    //     });
-
-    //     y = doc.lastAutoTable.finalY + 10;
-
-    //     /* ================= SUMMARY ================= */
-    //     doc.setFontSize(13);
-    //     doc.setFont("helvetica", "bold");
-    //     doc.text("Statement Summary", 14, y);
-    //     y += 6;
-
-    //     doc.setFontSize(10);
-    //     doc.setFont("helvetica", "normal");
-
-    //     const summaryData = [
-    //         ["Opening Balance", summary.OpeningBalance.toLocaleString()],
-    //         ["Total Debit", summary.TotalDebit.toLocaleString()],
-    //         ["Total Credit", summary.TotalCredit.toLocaleString()],
-    //         ["Closing Balance", summary.ClosingBalance.toLocaleString()],
-    //         ["Net Balance", summary.NetBalance.toLocaleString()],
-    //         ["Total Transactions", summary.TotalTransactions],
-    //     ];
-
-    //     autoTable(doc, {
-    //         startY: y,
-    //         body: summaryData,
-    //         theme: "grid",
-    //         styles: { fontSize: 9 },
-    //         columnStyles: {
-    //             0: { fontStyle: "bold", cellWidth: 50 },
-    //             1: { cellWidth: 60 },
-    //         },
-    //     });
-
-    //     /* ================= FOOTER ================= */
-    //     const pageCount = doc.internal.getNumberOfPages();
-    //     for (let i = 1; i <= pageCount; i++) {
-    //         doc.setPage(i);
-    //         doc.setFontSize(8);
-    //         doc.text(
-    //             `Generated on ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
-    //             105,
-    //             290,
-    //             { align: "center" }
-    //         );
-    //     }
-
-    //     doc.save(`Account_Statement_${customerInfo.Reference2}.pdf`);
-    // };
 
 
 
 
 
-    if (loading) return <p>Loading statement...</p>;
+
+    if (loading) return <p>Loading Entries...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
     if (!statementData) return null;
 
@@ -242,7 +119,7 @@ function MemberStatement({ customer }) {
     return (
         <div className="space-y-6 w">
             {/* ================= MEMBER INFO ================= */}
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
                 <button
                     onClick={downloadPDF}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
@@ -250,7 +127,7 @@ function MemberStatement({ customer }) {
                     Download Full Statement PDF
                 </button>
 
-            </div>
+            </div> */}
 
             <div className="bg-gray-200 rounded-md p-3">
                 <div className="border rounded p-4 bg-gray-50">
@@ -296,8 +173,8 @@ function MemberStatement({ customer }) {
                                 <th className="border border-gray-300 px-2 py-1">Product</th>
                                 <th className="border border-gray-300 px-2 py-1">Description</th>
                                 <th className="border border-gray-300 px-2 py-1">Ref</th>
-                                <th className="border border-gray-300 px-2 py-1">Debit</th>
-                                <th className="border border-gray-300 px-2 py-1">Credit</th>
+                                <th className="border border-gray-300 px-2 py-1">Debit Amount</th>
+                                <th className="border border-gray-300 px-2 py-1">Credit Amount</th>
                                 <th className="border border-gray-300 px-2 py-1">Balance</th>
                             </tr>
                         </thead>
@@ -311,6 +188,7 @@ function MemberStatement({ customer }) {
                                     <td className="border border-gray-600 px-2 py-1">{row.Debit ? row.Debit.toLocaleString() : "-"}</td>
                                     <td className="border border-gray-600 px-2 py-1">{row.Credit ? row.Credit.toLocaleString() : "-"}</td>
                                     <td className="border border-gray-600 px-2 py-1">{row.RunningTotal.toLocaleString()}</td>
+
                                 </tr>
                             ))}
                         </tbody>
@@ -346,7 +224,7 @@ function MemberStatement({ customer }) {
             {/* ================= SUMMARY ================= */}
             <div className="bg-gray-400 rounded-md p-3">
                 <div className="border rounded p-4 bg-gray-50">
-                    <h3 className="font-semibold mb-2 bg-gray-600 p-3 rounded-md text-white">Statement Summary</h3>
+                    <h3 className="font-semibold mb-2 bg-gray-600 p-3 rounded-md text-white">Entries Summary</h3>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                         <p><strong>Total Transactions:</strong> {summary.TotalTransactions}</p>
                         <p><strong>Total Debit:</strong> {summary.TotalDebit.toLocaleString()}</p>

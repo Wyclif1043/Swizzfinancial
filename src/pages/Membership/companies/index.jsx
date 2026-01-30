@@ -10,6 +10,8 @@ import {
     FaChevronUp,
     FaEllipsisV,
     FaMapMarkerAlt,
+    FaSearch,
+    FaFilter,
 } from "react-icons/fa";
 
 import {
@@ -26,19 +28,27 @@ import EditCompanies from "./EditCompanies";
 
 export default function Companies() {
     const [companies, setCompanies] = useState([]);
+    const [filteredCompanies, setFilteredCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedCompany, setExpandedCompany] = useState(null);
     const [openDrawer, setOpenDrawer] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState(null);
-
-
-
+    
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [sortBy, setSortBy] = useState("name");
+    const [sortOrder, setSortOrder] = useState("asc");
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         fetchCompanies();
     }, []);
 
+    useEffect(() => {
+        applyFilters();
+    }, [companies, searchQuery, statusFilter, sortBy, sortOrder]);
 
     const fetchCompanies = async () => {
         try {
@@ -56,6 +66,92 @@ export default function Companies() {
         }
     };
 
+    const applyFilters = () => {
+        let filtered = [...companies];
+
+        // Search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(company =>
+                company.Description?.toLowerCase().includes(query) ||
+                company.AddressEmail?.toLowerCase().includes(query) ||
+                company.AddressMobileLine?.toLowerCase().includes(query) ||
+                company.RegistrationNumber?.toLowerCase().includes(query) ||
+                company.AddressCity?.toLowerCase().includes(query)
+            );
+        }
+
+        // Status filter (if you have a status field, adjust as needed)
+        if (statusFilter !== "all") {
+            filtered = filtered.filter(company => {
+                // Adjust this based on your actual data structure
+                if (statusFilter === "2fa_enabled") {
+                    return company.EnforceTwoFactorAuthentication === true;
+                }
+                if (statusFilter === "2fa_disabled") {
+                    return company.EnforceTwoFactorAuthentication === false;
+                }
+                if (statusFilter === "biometrics_enabled") {
+                    return company.EnforceBiometricsForCashWithdrawal === true;
+                }
+                return true;
+            });
+        }
+
+        // Sorting
+        filtered.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (sortBy) {
+                case "name":
+                    valueA = a.Description || "";
+                    valueB = b.Description || "";
+                    break;
+                case "email":
+                    valueA = a.AddressEmail || "";
+                    valueB = b.AddressEmail || "";
+                    break;
+                case "date":
+                    valueA = new Date(a.CreatedDate);
+                    valueB = new Date(b.CreatedDate);
+                    break;
+                case "phone":
+                    valueA = a.AddressMobileLine || "";
+                    valueB = b.AddressMobileLine || "";
+                    break;
+                default:
+                    valueA = a.Description || "";
+                    valueB = b.Description || "";
+            }
+
+            if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
+            if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredCompanies(filtered);
+    };
+
+    const handleSearch = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleSort = (field) => {
+        if (sortBy === field) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(field);
+            setSortOrder("asc");
+        }
+    };
+
+    const clearFilters = () => {
+        setSearchQuery("");
+        setStatusFilter("all");
+        setSortBy("name");
+        setSortOrder("asc");
+    };
+
     const handleDelete = async (id) => {
         Swal.fire({
             title: "Delete Company?",
@@ -67,7 +163,6 @@ export default function Companies() {
             confirmButtonText: "Delete",
         }).then(async (result) => {
             if (result.isConfirmed) {
-
                 try {
                     const res = await fetch(`${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/companies/${id}`, {
                         method: "DELETE",
@@ -77,9 +172,7 @@ export default function Companies() {
                         throw new Error("Failed to delete company");
                     }
 
-                    // Remove deleted company from UI
                     setCompanies((prev) => prev.filter((c) => c.Id !== id));
-
                     Swal.fire("Deleted!", "Company removed successfully.", "success");
                 } catch (error) {
                     Swal.fire("Error", error.message, "error");
@@ -88,13 +181,15 @@ export default function Companies() {
         });
     };
 
-
     return (
         <div className="bg-white m-8 px-8 py-8 shadow-2xl rounded-lg relative">
             {/* Header */}
             <div className="flex justify-between items-center mb-6 bg-indigo-800 px-6 py-3 rounded-2xl">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     <FaBuilding className="text-white" /> Companies
+                    <span className="text-sm font-normal ml-2">
+                        ({filteredCompanies.length} {filteredCompanies.length === 1 ? 'company' : 'companies'})
+                    </span>
                 </h2>
                 <Button
                     className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2"
@@ -102,6 +197,91 @@ export default function Companies() {
                 >
                     <FaPlus /> Add Company
                 </Button>
+            </div>
+
+            {/* Search and Filter Bar */}
+            <div className="mb-6 bg-gray-100 p-4 rounded-lg">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search companies by name, email, phone, city, or registration number..."
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
+                    </div>
+
+                    {/* Filter Toggle Button */}
+                    <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <FaFilter />
+                        {showFilters ? 'Hide Filters' : 'Show Filters'}
+                    </Button>
+
+                    {/* Clear Filters Button */}
+                    {(searchQuery || statusFilter !== "all") && (
+                        <Button
+                            variant="ghost"
+                            onClick={clearFilters}
+                            className="text-gray-600 hover:text-gray-800"
+                        >
+                            Clear Filters
+                        </Button>
+                    )}
+                </div>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                    <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Status Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Status Filter
+                            </label>
+                            <select
+                                className="w-full p-2 border border-gray-300 rounded-lg"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="all">All Companies</option>
+                                <option value="2fa_enabled">2FA Enabled</option>
+                                <option value="2fa_disabled">2FA Disabled</option>
+                                <option value="biometrics_enabled">Biometrics Enabled</option>
+                            </select>
+                        </div>
+
+                        {/* Sort Options */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Sort By
+                            </label>
+                            <div className="flex gap-2">
+                                {['name', 'email', 'date', 'phone'].map((field) => (
+                                    <Button
+                                        key={field}
+                                        size="sm"
+                                        variant={sortBy === field ? "default" : "outline"}
+                                        className="capitalize"
+                                        onClick={() => handleSort(field)}
+                                    >
+                                        {field}
+                                        {sortBy === field && (
+                                            <span className="ml-1">
+                                                {sortOrder === 'asc' ? '↑' : '↓'}
+                                            </span>
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Table Header */}
@@ -125,9 +305,9 @@ export default function Companies() {
                             </div>
                         ))}
                     </div>
-                ) : companies.length > 0 ? (
+                ) : filteredCompanies.length > 0 ? (
                     <div className="space-y-2">
-                        {companies.map((company) => (
+                        {filteredCompanies.map((company) => (
                             <div
                                 key={company.Id}
                                 className="bg-white rounded-lg shadow-lg border"
@@ -153,7 +333,7 @@ export default function Companies() {
                                     </span>
 
                                     {/* Expand Button */}
-                                    <span className=" col-span-1">
+                                    <span className="col-span-1">
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -205,8 +385,6 @@ export default function Companies() {
                                     </div>
                                 </div>
 
-
-
                                 {/* Expanded Section */}
                                 {expandedCompany === company.Id && (
                                     <div className="border-t bg-gray-400 p-4 mx-1 mb-1 rounded-b-lg space-y-4">
@@ -249,7 +427,20 @@ export default function Companies() {
                 ) : (
                     <div className="text-gray-500 text-center mt-4">
                         <img src={NotFoundImage} alt="Not Found" className="mx-auto w-42" />
-                        <p className="font-medium text-gray-400">No Companies Found.</p>
+                        <p className="font-medium text-gray-400">
+                            {searchQuery || statusFilter !== "all" 
+                                ? "No companies match your search criteria." 
+                                : "No Companies Found."}
+                        </p>
+                        {(searchQuery || statusFilter !== "all") && (
+                            <Button
+                                variant="outline"
+                                className="mt-2"
+                                onClick={clearFilters}
+                            >
+                                Clear Filters
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>
@@ -264,7 +455,6 @@ export default function Companies() {
                 data={selectedCompany}
                 refresh={fetchCompanies}
             />
-
         </div>
     );
 }

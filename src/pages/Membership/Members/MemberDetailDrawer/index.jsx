@@ -68,9 +68,9 @@ export default function MemberDetailsDrawer({ open, onClose, member }) {
                                         <TabsTrigger value="accounts" className="flex items-center gap-2 px-4 py-2">
                                             <FaWallet /> Accounts
                                         </TabsTrigger>
-                                        <TabsTrigger value="statements" className="flex items-center gap-2 px-4 py-2">
-                                            <FaWallet /> Statements
-                                        </TabsTrigger>
+                                        {/* <TabsTrigger value="statements" className="flex items-center gap-2 px-4 py-2">
+                                            <FaWallet /> Entries
+                                        </TabsTrigger> */}
                                     </TabsList>
 
 
@@ -89,9 +89,9 @@ export default function MemberDetailsDrawer({ open, onClose, member }) {
                                     <TabsContent value="nok">
                                         <MemberNextOfKinTab nextOfKin={NextOfKin} />
                                     </TabsContent>
-                                    <TabsContent value="statements">
-                                        <MemberStatement customer={Customer} />
-                                    </TabsContent>
+                                    {/* <TabsContent value="statements">
+                                        <MemberStatement customer={Customer} accounts={Accounts} />
+                                    </TabsContent> */}
                                 </Tabs>
                             </div>
                         </div>
@@ -101,5 +101,4 @@ export default function MemberDetailsDrawer({ open, onClose, member }) {
         </AnimatePresence>
     );
 }
-
 
