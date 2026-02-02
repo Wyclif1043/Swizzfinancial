@@ -1,85 +1,143 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import Swal from "sweetalert2";
+import { Trash2, Plus, AlertTriangle } from "lucide-react";
 
-const API_BASE = "http://88.99.215.90:8600/api";
+const EMPTY_LINE = {
+    customerAccountId: "",
+    customerId: "",
+    accountName: "",
+    description: "",
+    amount: "",
+    availableBalance: 0,
+};
 
-export default function AddInterAccountBatchDrawer({ open, onClose, onSuccess }) {
-    const [loading, setLoading] = useState(false);
+// Safe fetch helper
+const safeFetchArray = async (url) => {
+    try {
+        const res = await fetch(url, { headers: { "ngrok-skip-browser-warning": "true" } });
+        const data = await res.json();
+        const arr = data.Data || data.data || [];
+        return Array.isArray(arr) ? arr : [];
+    } catch (err) {
+        console.error("API fetch failed:", url, err);
+        return [];
+    }
+};
 
+export default function AddInterAccountTransfer({ open, onClose, onSuccess }) {
+    const [lines, setLines] = useState([{ ...EMPTY_LINE }]);
+    const [members, setMembers] = useState([]);
+    const [selectedMemberId, setSelectedMemberId] = useState("");
+    const [customerAccount, setCustomerAccount] = useState([]);
+    const [banks, setBanks] = useState([]);
     const [branches, setBranches] = useState([]);
-    const [branchDisplay, setBranchDisplay] = useState("");
+    const [selectedBankId, setSelectedBankId] = useState("");
+    const [branchId, setBranchId] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [reference, setReference] = useState("");
+    const [memberModalOpen, setMemberModalOpen] = useState(false);
 
-    const [accounts, setAccounts] = useState([]);
-    const [accountDisplay, setAccountDisplay] = useState("");
+    const totalAmount = useMemo(
+        () => lines.reduce((sum, l) => sum + Number(l.amount || 0), 0),
+        [lines]
+    );
 
-    const [postingPeriods, setPostingPeriods] = useState([]);
-    const [postingPeriodDisplay, setPostingPeriodDisplay] = useState("");
+    const activeCustomerAccounts = useMemo(
+        () => customerAccount.filter(a => a.StatusDescription !== "Inactive"),
+        [customerAccount]
+    );
 
-    const [formData, setFormData] = useState({
-        branchId: "",
-        customerAccountId: "",
-        postingPeriodId: "",
-        reference: "",
-        availableBalance: 0,
-        startDate: "",
-        endDate: "",
-        wireTransferAuthOption: 1,
-        interAccountBatchEntries: [],
-    });
-
+    // Load lookups on mount
     useEffect(() => {
-        if (!open) return;
+        safeFetchArray(`${import.meta.env.VITE_APP_FIN_URL}/api/values/GetChartOfAccount`);
+        safeFetchArray(`${import.meta.env.VITE_APP_FIN_URL}/api/values/branches`).then(setBranches);
+        safeFetchArray(`${import.meta.env.VITE_APP_FIN_URL}/api/values/getBankWithLinkages`).then(setBanks);
+        safeFetchArray(`${import.meta.env.VITE_APP_MEMBERSHIP_URL}/api/customers`).then(setMembers);
+    }, []);
 
-        const loadLookups = async () => {
-            try {
-                const [branchesRes, periodsRes, accountsRes] = await Promise.all([
-                    fetch(`${API_BASE}/values/branches`),
-                    fetch(`${API_BASE}/loaning/GetPostingPeriods`),
-                    fetch(`${API_BASE}/values/customeraccounts`)
-                ]);
+    // Load customer accounts when a member is selected
+    useEffect(() => {
+        if (!selectedMemberId) {
+            setCustomerAccount([]);
+            return;
+        }
+        safeFetchArray(
+            `${import.meta.env.VITE_APP_FIN_URL}/api/values/CustomerAccount/by-customer?customerId=${selectedMemberId}`
+        ).then(setCustomerAccount);
+    }, [selectedMemberId]);
 
-                setBranches((await branchesRes.json()).Data || []);
-                setPostingPeriods(await periodsRes.json());
-                setAccounts(await accountsRes.json());
-            } catch {
-                Swal.fire("Error", "Failed to load lookups", "error");
-            }
+    const addLine = () => setLines(p => [...p, { ...EMPTY_LINE }]);
+    const removeLine = (i) => setLines(p => p.filter((_, idx) => idx !== i));
+    const updateLine = (i, patch) => setLines(p => p.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+
+    const onMemberSelect = (memberId) => {
+        setSelectedMemberId(memberId);
+    };
+
+    const onBankSelect = (bankId) => {
+        const bank = banks.find(b => b.Id === bankId);
+        if (!bank) return;
+        setSelectedBankId(bank.Id);
+        setBankId(bank.BankId);
+        setBranchId(bank.BranchId);
+    };
+
+    const postBatch = async () => {
+        if (!branchId || !selectedBankId) {
+            Swal.fire("Error", "Branch and Bank are required", "error");
+            return;
+        }
+        if (lines.some(l => !l.amount || !l.customerAccountId || !l.customerId)) {
+            Swal.fire("Error", "All batch lines must have account, customer, and amount", "error");
+            return;
+        }
+
+        const payload = {
+            branchId,
+            bankAccountId: selectedBankId,
+            reference: reference || "AUTO-BATCH",
+            receipts: lines.map(l => ({
+                totalValue: Number(l.amount),
+                customerAccount: { id: l.customerAccountId },
+                customerDTO: { id: l.customerId },
+            })),
         };
 
-        loadLookups();
-    }, [open]);
-
-    const handleChange = (field, value) =>
-        setFormData(prev => ({ ...prev, [field]: value }));
-
-    const submit = async (e) => {
-        e.preventDefault();
         setLoading(true);
-
         try {
             const res = await fetch(
-                `${API_BASE}/values/InterAccountTransferBatch`,
+                `${import.meta.env.VITE_APP_FIN_URL}/api/values/CustomerReceipt`,
                 {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "ngrok-skip-browser-warning": "true",
-                    },
-                    body: JSON.stringify(formData),
+                    headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+                    body: JSON.stringify(payload),
                 }
             );
+            const data = await res.json();
 
-            if (!res.ok) throw new Error("Failed to create batch");
-
-            Swal.fire("Success", "Batch created successfully", "success");
-            onSuccess?.();
-            onClose();
+            if (data.success) {
+                Swal.fire("Success", "Batch posted successfully", "success");
+                setLines([{ ...EMPTY_LINE }]);
+                setReference("");
+                setSelectedMemberId("");
+                if (onSuccess) onSuccess(data);
+            } else {
+                Swal.fire("Error", data.message || "Failed to post batch", "error");
+            }
         } catch (err) {
-            Swal.fire("Error", err.message, "error");
+            console.error(err);
+            Swal.fire("Error", "Network error", "error");
         } finally {
             setLoading(false);
         }
@@ -88,110 +146,161 @@ export default function AddInterAccountBatchDrawer({ open, onClose, onSuccess })
     return (
         <AnimatePresence>
             {open && (
-                <>
-                    <motion.div
-                        className="fixed inset-0 bg-black z-40"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.4 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                    />
+                <motion.div
+                    initial={{ x: "100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "100%" }}
+                    className="fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 overflow-auto"
+                >
+                    <div className="p-6 flex justify-between items-center border-b">
+                        <h2 className="text-xl font-bold">Add Inter-Account Transfer Batch</h2>
+                        <Button variant="ghost" onClick={() => onClose(false)}>Close</Button>
+                    </div>
 
-                    <motion.div
-                        className="fixed top-5 right-3 w-[720px] bg-white shadow-xl z-50 rounded-2xl p-4"
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "100%" }}
-                    >
-                        <div className="flex justify-between items-center bg-indigo-600 p-4 rounded-xl mb-4">
-                            <h2 className="text-white font-bold">
-                                New Inter-Account Batch
-                            </h2>
-                            <Button size="sm" variant="outline" onClick={onClose}>
-                                Close
-                            </Button>
-                        </div>
+                    <div className="p-6 space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Member</Label>
+                                <Select value={selectedMemberId} onValueChange={onMemberSelect}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select member" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {members.length === 0 ? (
+                                            <div className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                                No members available
+                                            </div>
+                                        ) : members.map(m => (
+                                            <SelectItem key={m.Id} value={m.Id}>
+                                                {m.IndividualFirstName} {m.IndividualLastName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        <form onSubmit={submit} className="grid grid-cols-2 gap-4">
-                            {/* Branch */}
+                            <div>
+                                <Label>Bank</Label>
+                                <Select value={selectedBankId} onValueChange={onBankSelect}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select bank" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {banks.map(b => (
+                                            <SelectItem key={b.Id} value={b.Id}>
+                                                {b.BankName} | {b.BankBranchName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <div>
                                 <Label>Branch</Label>
-                                <Input
-                                    list="branches"
-                                    value={branchDisplay}
-                                    onChange={(e) => {
-                                        setBranchDisplay(e.target.value);
-                                        const b = branches.find(x => x.Description === e.target.value);
-                                        if (b) handleChange("branchId", b.Id);
-                                    }}
-                                    required
-                                />
-                                <datalist id="branches">
-                                    {branches.map(b => (
-                                        <option key={b.Id} value={b.Description} />
-                                    ))}
-                                </datalist>
-                            </div>
-
-                            {/* Account */}
-                            <div>
-                                <Label>Customer Account</Label>
-                                <Input
-                                    list="accounts"
-                                    value={accountDisplay}
-                                    onChange={(e) => {
-                                        setAccountDisplay(e.target.value);
-                                        const a = accounts.find(x => x.FullAccountNumber === e.target.value);
-                                        if (a) handleChange("customerAccountId", a.Id);
-                                    }}
-                                    required
-                                />
-                                <datalist id="accounts">
-                                    {accounts.map(a => (
-                                        <option key={a.Id} value={a.FullAccountNumber} />
-                                    ))}
-                                </datalist>
-                            </div>
-
-                            {/* Posting Period */}
-                            <div>
-                                <Label>Posting Period</Label>
-                                <Input
-                                    list="periods"
-                                    value={postingPeriodDisplay}
-                                    onChange={(e) => {
-                                        setPostingPeriodDisplay(e.target.value);
-                                        const p = postingPeriods.find(x => x.Description === e.target.value);
-                                        if (p) handleChange("postingPeriodId", p.Id);
-                                    }}
-                                    required
-                                />
-                                <datalist id="periods">
-                                    {postingPeriods.map(p => (
-                                        <option key={p.Id} value={p.Description} />
-                                    ))}
-                                </datalist>
+                                <Select value={branchId} onValueChange={setBranchId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {branches.map(b => (
+                                            <SelectItem key={b.Id} value={b.Id}>{b.Description}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div>
                                 <Label>Reference</Label>
-                                <Input
-                                    value={formData.reference}
-                                    onChange={e => handleChange("reference", e.target.value)}
-                                    required
-                                />
+                                <Input value={reference} onChange={e => setReference(e.target.value)} />
+                            </div>
+                        </div>
+
+                        {/* Batch Lines */}
+                        <div className="border rounded">
+                            <div className="grid grid-cols-12 bg-gray-600 text-white p-2 text-xs font-semibold uppercase">
+                                <div className="col-span-3">Account</div>
+                                <div className="col-span-3">Description</div>
+                                <div className="col-span-3">Amount</div>
+                                <div className="col-span-3 text-right"></div>
                             </div>
 
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="col-span-2 bg-indigo-600"
-                            >
-                                {loading ? "Saving..." : "Create Batch"}
+                            {lines.map((l, i) => (
+                                <div key={i} className="grid grid-cols-12 border-b p-2 bg-gray-50">
+                                    <div className="col-span-3">
+                                        <Select
+                                            value={l.customerAccountId}
+                                            onValueChange={v => {
+                                                const [customerAccountId, customerId, accountName] = v.split("|");
+                                                const selectedAccount = customerAccount.find(a => a.Id === customerAccountId);
+                                                const balance = selectedAccount?.AvailableBalance || 0;
+                                                updateLine(i, { customerAccountId, customerId, accountName, availableBalance: balance });
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select Account" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {activeCustomerAccounts.length === 0 ? (
+                                                    <div className="px-3 py-2 text-sm text-gray-500 flex items-center gap-2">
+                                                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                                                        No active accounts
+                                                    </div>
+                                                ) : activeCustomerAccounts.map(a => (
+                                                    <SelectItem
+                                                        key={a.Id}
+                                                        value={`${a.Id}|${a.CustomerId}|${a.CustomerAccountTypeTargetProductDescription}`}
+                                                    >
+                                                        {a.CustomerAccountTypeTargetProductDescription}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="col-span-3">
+                                        <Input
+                                            placeholder="Description"
+                                            value={l.description}
+                                            onChange={e => updateLine(i, { description: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="col-span-3">
+                                        <Input
+                                            type="number"
+                                            placeholder="Amount"
+                                            value={l.amount}
+                                            onChange={e => updateLine(i, { amount: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="col-span-3 text-right">
+                                        {lines.length > 1 && (
+                                            <Button size="icon" variant="ghost" onClick={() => removeLine(i)}>
+                                                <Trash2 />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="p-2 text-right font-semibold">
+                                Total: {totalAmount.toLocaleString()}
+                            </div>
+                        </div>
+
+                        <Button variant="outline" onClick={addLine} className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" /> Add Line
+                        </Button>
+
+                        <div className="flex justify-end gap-2">
+                            <Button onClick={postBatch} className="bg-indigo-700 text-white">
+                                {loading ? "Posting..." : "Post Batch"}
                             </Button>
-                        </form>
-                    </motion.div>
-                </>
+                        </div>
+                    </div>
+                </motion.div>
             )}
         </AnimatePresence>
     );
