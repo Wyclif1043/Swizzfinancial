@@ -88,6 +88,8 @@ import LoanSubSector from "./pages/Loaning/LoanSubSector/index.jsx";
 import LoanCalculator from "./pages/Loaning/LoanCalculator/index.jsx";
 import LoanReports from "./pages/Reports/LoanReports/index.jsx";
 import Creditbatches from "./pages/Finance/Creditbatches/index.jsx";
+import InterAccountTransfer from "./pages/Finance/InterAccountTransfer/index.jsx";
+
 import FinanceReports from "./pages/Reports/FinanceReports/index.jsx";
 import Insurance from "./pages/Membership/Insurance/index.jsx";
 import MemberExit from "./pages/Membership/MemberExit/index.jsx";
@@ -154,7 +156,7 @@ export default function App() {
           <Route path="Finance/AccountsPayable" element={<AccountPayable />} />
           <Route path="Finance/AccountsReceivable" element={<AccountsReceivable />} />
           <Route path="Finance/Creditbatches" element={<Creditbatches />} />
-          <Route path="Finance/InterTransfer" element={<InterTransfer />} />
+          <Route path="Finance/InterAccountTransfer" element={<InterAccountTransfer />} />
           <Route path="AccountsPayable/reports" element={<h1>AP Reports</h1>} />
 
           <Route path="AccountsPayable/settings" element={<h1>AP Settings</h1>} />

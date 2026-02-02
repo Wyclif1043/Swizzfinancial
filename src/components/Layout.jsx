@@ -138,6 +138,8 @@ const mockWorkspaces = [
       { id: "Finance/PaymentVoucher", name: "Payment voucher", sublinks: [] },
       { id: "Finance/MemberReceipting", name: "Receipt", sublinks: [] },
       { id: "Finance/Creditbatches", name: "Creditbatches", sublinks: [] },
+      { id: "Finance/InterAccountTransfer", name: "InterAccountTransfer", sublinks: [] },
+
       //{ id: "Finance/InterTransfer", name: "Inter Transfer", sublinks: [] },
 
 
