@@ -14,6 +14,14 @@ export default function LoanRegisterFullDetails() {
   const [guarantors, setGuarantors] = useState([]);
   const [loadingGuarantors, setLoadingGuarantors] = useState(false);
 
+  // Loan Calculator State
+  const [calculator, setCalculator] = useState({
+    principal: 0,
+    rate: 0,
+    termMonths: 0,
+    monthlyPayment: 0,
+  });
+
   // ================== FETCH LOANS ==================
   useEffect(() => {
     fetch("http://88.99.215.90:8600/api/Loaning/getallloans", {
@@ -27,11 +35,11 @@ export default function LoanRegisterFullDetails() {
   // ================== FETCH GUARANTORS ==================
   useEffect(() => {
     if (!selectedLoan) return;
-
     setLoadingGuarantors(true);
-    fetch(`http://88.99.215.90:8600/api/GuarantorManagement/GetLoanGuarantors/${selectedLoan.Id}`, {
-      headers: { "ngrok-skip-browser-warning": "true" },
-    })
+    fetch(
+      `http://88.99.215.90:8600/api/GuarantorManagement/GetLoanGuarantors/${selectedLoan.Id}`,
+      { headers: { "ngrok-skip-browser-warning": "true" } }
+    )
       .then((res) => res.json())
       .then((data) => setGuarantors(Array.isArray(data) ? data : data.Data || []))
       .catch(() => Swal.fire("Error", "Failed to load guarantors", "error"))
@@ -52,9 +60,9 @@ export default function LoanRegisterFullDetails() {
   const toggleSection = (key) =>
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const fmt = (n) => Number(n || 0).toLocaleString();
+  const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // ================== CSV EXPORT ==================
+  // ================== CSV & PDF EXPORT ==================
   const exportCSV = () => {
     const headers = [
       "CaseNo","Member","ID","Product","Applied","Balance","Rate","TermMonths",
@@ -66,7 +74,6 @@ export default function LoanRegisterFullDetails() {
       const loanGuarantors = l.LoanGuarantorDTO?.length
         ? l.LoanGuarantorDTO
         : [{ CustomerIndividualFirstName: "", CustomerIndividualLastName: "", AmountGuaranteed: "", CommittedShares: "" }];
-      
       loanGuarantors.forEach((g) => {
         const row = [
           l.PaddedCaseNumber,
@@ -94,7 +101,6 @@ export default function LoanRegisterFullDetails() {
     a.click();
   };
 
-  // ================== PDF EXPORT ==================
   const exportPDF = (loanData = filtered) => {
     const doc = new jsPDF();
     const tableData = [];
@@ -130,10 +136,113 @@ export default function LoanRegisterFullDetails() {
     doc.save("loan-register.pdf");
   };
 
-  // ================== PDF EXPORT SINGLE LOAN ==================
-  const exportLoanPDF = (loan, loanGuarantors) => {
+  const exportLoanPDF = (loan) => {
     if (!loan) return;
     exportPDF([loan]);
+  };
+
+  // ================== LOAN CALCULATOR ==================
+  const calculateLoan = ({ principal, rate, termMonths }) => {
+    const r = rate / 12 / 100;
+    const n = termMonths;
+    if (!r) return principal / n || 0;
+    return (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  };
+
+  const handleCalcChange = (field, value) => {
+    const updated = { ...calculator, [field]: Number(value) };
+    updated.monthlyPayment = calculateLoan(updated);
+    setCalculator(updated);
+  };
+
+  const exportCalculatorPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Loan Calculator Results", 10, 10);
+    doc.autoTable({
+      head: [["Principal", "Rate (%)", "Term (Months)", "Monthly Payment"]],
+      body: [[
+        fmt(calculator.principal),
+        calculator.rate,
+        calculator.termMonths,
+        fmt(calculator.monthlyPayment)
+      ]],
+      startY: 20,
+    });
+    doc.save("loan-calculator.pdf");
+  };
+
+  const exportCalculatorCSV = () => {
+    const headers = ["Principal", "Rate (%)", "Term (Months)", "Monthly Payment"];
+    const row = [calculator.principal, calculator.rate, calculator.termMonths, calculator.monthlyPayment];
+    const csv = [headers.join(","), row.join(",")].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "loan-calculator.csv";
+    a.click();
+  };
+
+  // ================== REPAYMENT SCHEDULE ==================
+  const generateRepaymentSchedule = (principal, annualRate, termMonths) => {
+    const schedule = [];
+    const r = annualRate / 12 / 100;
+    const n = termMonths;
+    const monthlyPayment = r === 0 ? principal / n : (principal * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    let balance = principal;
+
+    for (let i = 1; i <= n; i++) {
+      const interest = balance * r;
+      const principalPayment = monthlyPayment - interest;
+      balance -= principalPayment;
+
+      schedule.push({
+        month: i,
+        payment: monthlyPayment,
+        principal: principalPayment,
+        interest,
+        balance: balance > 0 ? balance : 0,
+      });
+    }
+
+    return schedule;
+  };
+
+  const exportSchedulePDF = (loan) => {
+    if (!loan) return;
+    const schedule = generateRepaymentSchedule(
+      loan.AmountApplied,
+      loan.LoanInterestAnnualPercentageRate,
+      loan.LoanRegistrationTermInMonths
+    );
+
+    const doc = new jsPDF();
+    doc.text(`Repayment Schedule - ${loan.PaddedCaseNumber}`, 10, 10);
+
+    const body = schedule.map(s => [s.month, fmt(s.payment), fmt(s.principal), fmt(s.interest), fmt(s.balance)]);
+
+    doc.autoTable({ head: [["Month","Payment","Principal","Interest","Balance"]], body, startY: 20 });
+    doc.save(`${loan.PaddedCaseNumber}-repayment-schedule.pdf`);
+  };
+
+  const exportScheduleCSV = (loan) => {
+    if (!loan) return;
+    const schedule = generateRepaymentSchedule(
+      loan.AmountApplied,
+      loan.LoanInterestAnnualPercentageRate,
+      loan.LoanRegistrationTermInMonths
+    );
+
+    const headers = ["Month","Payment","Principal","Interest","Balance"];
+    const rows = schedule.map(s => [s.month, s.payment, s.principal, s.interest, s.balance]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${loan.PaddedCaseNumber}-repayment-schedule.csv`;
+    a.click();
   };
 
   // ================== RENDER ==================
@@ -218,7 +327,7 @@ export default function LoanRegisterFullDetails() {
               <div className="p-4 bg-indigo-700 text-white flex justify-between items-center m-4 rounded-2xl">
                 <h2 className="font-bold text-lg">Loan Case Details</h2>
                 <div className="flex gap-2">
-                  <Button size="sm" color="light" onClick={() => exportLoanPDF(selectedLoan, guarantors)}>Export PDF</Button>
+                  <Button size="sm" color="light" onClick={() => exportLoanPDF(selectedLoan)}>Export PDF</Button>
                   <Button size="sm" className="bg-indigo-500" onClick={() => setOpenDrawer(false)}>Close</Button>
                 </div>
               </div>
@@ -264,6 +373,48 @@ export default function LoanRegisterFullDetails() {
                   <KV k="Created" v={new Date(selectedLoan.CreatedDate).toLocaleString()} />
                   <KV k="Disbursed By" v={selectedLoan.DisbursedBy} />
                   <KV k="Disbursed Date" v={selectedLoan.DisbursedDate ? new Date(selectedLoan.DisbursedDate).toLocaleString() : "—"} />
+                </Collapsible>
+
+                <Collapsible title="Loan Calculator" isOpen={expandedSections.calculator} toggle={() => toggleSection("calculator")}>
+                  <KV k="Principal" v={<input type="number" value={calculator.principal} onChange={(e) => handleCalcChange("principal", e.target.value)} className="border rounded p-1 w-full" />} />
+                  <KV k="Rate (%)" v={<input type="number" value={calculator.rate} onChange={(e) => handleCalcChange("rate", e.target.value)} className="border rounded p-1 w-full" />} />
+                  <KV k="Term (Months)" v={<input type="number" value={calculator.termMonths} onChange={(e) => handleCalcChange("termMonths", e.target.value)} className="border rounded p-1 w-full" />} />
+                  <KV k="Monthly Payment" v={fmt(calculator.monthlyPayment)} />
+                  <div className="flex gap-2 mt-2">
+                    <Button size="sm" onClick={exportCalculatorPDF}>Download PDF</Button>
+                    <Button size="sm" color="gray" onClick={exportCalculatorCSV}>Download CSV</Button>
+                  </div>
+                </Collapsible>
+
+                <Collapsible title="Repayment Schedule" isOpen={expandedSections.schedule} toggle={() => toggleSection("schedule")}>
+                  <div className="flex gap-2 mb-2">
+                    <Button size="sm" onClick={() => exportSchedulePDF(selectedLoan)}>Download PDF</Button>
+                    <Button size="sm" color="gray" onClick={() => exportScheduleCSV(selectedLoan)}>Download CSV</Button>
+                  </div>
+                  <div className="overflow-auto max-h-64">
+                    <table className="min-w-full text-sm border">
+                      <thead className="bg-gray-800 text-white">
+                        <tr>
+                          <th className="p-1">Month</th>
+                          <th className="p-1">Payment</th>
+                          <th className="p-1">Principal</th>
+                          <th className="p-1">Interest</th>
+                          <th className="p-1">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generateRepaymentSchedule(selectedLoan.AmountApplied, selectedLoan.LoanInterestAnnualPercentageRate, selectedLoan.LoanRegistrationTermInMonths).map((s, i) => (
+                          <tr key={i} className={i % 2 ? "bg-gray-100" : ""}>
+                            <td className="p-1">{s.month}</td>
+                            <td className="p-1">{fmt(s.payment)}</td>
+                            <td className="p-1">{fmt(s.principal)}</td>
+                            <td className="p-1">{fmt(s.interest)}</td>
+                            <td className="p-1">{fmt(s.balance)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </Collapsible>
               </div>
             </motion.div>
